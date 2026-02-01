@@ -65,7 +65,10 @@ export function createLvyatechAdminRoutes(deps: LvyatechAdminRouteDeps): Router 
       pushMessageStore.setRetainDays(retainDays);
     }
     if (body.cleanupEnabled !== undefined) {
-      pushMessageStore.setCleanupEnabled(Boolean(body.cleanupEnabled));
+      const enabled = Boolean(body.cleanupEnabled);
+      pushMessageStore.setCleanupEnabled(enabled);
+      // 开启定时清理时立即执行一次，无需等到下一轮周期
+      if (enabled) pushMessageStore.runCleanup();
     }
     ctx.body = {
       code: 0,
