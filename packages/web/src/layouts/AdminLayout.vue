@@ -10,8 +10,16 @@
         @click="onMenuClick"
       />
       <div class="user-bar">
-        <span class="nickname">{{ userStore.user?.nickname ?? userStore.user?.username }}</span>
-        <a-button type="text" size="small" class="logout" @click="handleLogout">退出</a-button>
+        <a-dropdown trigger="hover">
+          <div class="avatar" :title="userStore.user?.nickname ?? userStore.user?.username">
+            {{ userInitial }}
+          </div>
+          <template #overlay>
+            <a-menu @click="(e: { key: string }) => e.key === 'logout' && handleLogout()">
+              <a-menu-item key="logout" danger>退出</a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
       </div>
     </a-layout-sider>
     <a-layout>
@@ -37,6 +45,11 @@ const route = useRoute();
 const userStore = useUserStore();
 const collapsed = ref(false);
 const selectedKeys = ref<string[]>([route.path]);
+const userInitial = computed(() => {
+  const name = userStore.user?.nickname ?? userStore.user?.username ?? '';
+  if (!name) return '?';
+  return name.charAt(0).toUpperCase();
+});
 
 const menuItems: MenuProps['items'] = [
   { key: '/', label: '仪表盘' },
@@ -82,21 +95,22 @@ function handleLogout() {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 10px;
 }
-.nickname {
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.75);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.logout {
-  color: rgba(255, 255, 255, 0.65) !important;
-}
-.logout:hover {
-  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
 }
 .main {
   padding: 24px;

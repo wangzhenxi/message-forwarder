@@ -18,9 +18,7 @@
           </a-col>
         </a-row>
         <a-card title="每日消息数量（按分类）">
-          <div class="chart-wrap">
-            <Line v-if="chartData" :data="chartData" :options="chartOptions" />
-          </div>
+          <div ref="chartContainerRef" class="chart-wrap"></div>
         </a-card>
       </template>
     </a-spin>
@@ -28,27 +26,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-import { Line } from 'vue-chartjs';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { Chart } from '@antv/g2';
 import { useUserStore } from '@/stores/user';
 import { getDashboardStats, type DashboardStats } from '@/api/lvyatech';
-
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 const userStore = useUserStore();
 const loading = ref(true);
 const error = ref('');
 const stats = ref<DashboardStats | null>(null);
+const chartContainerRef = ref<HTMLDivElement | null>(null);
+let chart: Chart | null = null;
 
 const categoryOrder = ['device-status', 'sms', 'call', 'other'] as const;
 const categoryLabels: Record<string, string> = {
@@ -57,50 +45,63 @@ const categoryLabels: Record<string, string> = {
   sms: '短信消息',
   other: '其它消息',
 };
-const categoryColors: Record<string, string> = {
-  'device-status': 'rgb(24, 144, 255)',
-  sms: 'rgb(82, 196, 26)',
-  call: 'rgb(250, 173, 20)',
-  other: 'rgb(140, 140, 140)',
-};
 
+/** 转为 G2 多系列折线图所需扁平数据：{ date, category, value }[] */
 const chartData = computed(() => {
   const daily = stats.value?.daily;
-  if (!daily?.length) return null;
-  const labels = daily.map((d) => d.date);
-  const datasets = categoryOrder.map((cat) => ({
-    label: categoryLabels[cat] ?? cat,
-    data: daily.map((d) => d.byCategory[cat] ?? 0),
-    borderColor: categoryColors[cat] ?? 'rgb(140, 140, 140)',
-    backgroundColor: 'transparent',
-    tension: 0.2,
-    fill: false,
-  }));
-  return { labels, datasets };
+  if (!daily?.length) return [];
+  const rows: { date: string; category: string; value: number }[] = [];
+  for (const d of daily) {
+    for (const cat of categoryOrder) {
+      rows.push({
+        date: d.date,
+        category: categoryLabels[cat] ?? cat,
+        value: d.byCategory[cat] ?? 0,
+      });
+    }
+  }
+  return rows;
 });
 
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      position: 'top' as const,
-    },
-    tooltip: {
-      mode: 'index' as const,
-      intersect: false,
-    },
-  },
-  scales: {
-    x: {
-      title: { display: true, text: '日期' },
-    },
-    y: {
-      beginAtZero: true,
-      title: { display: true, text: '消息数' },
-    },
-  },
-};
+function renderChart() {
+  if (!chartContainerRef.value || !chartData.value.length) return;
+  if (chart) {
+    chart.destroy();
+    chart = null;
+  }
+  chart = new Chart({
+    container: chartContainerRef.value,
+    autoFit: true,
+  });
+  chart
+    .line()
+    .data(chartData.value)
+    .encode('x', 'date')
+    .encode('y', 'value')
+    .encode('color', 'category')
+    .encode('shape', 'smooth')
+    .axis('x', {
+      title: '日期',
+      tickCount: 5,
+      labelAutoRotate: false,
+    })
+    .axis('y', { title: '消息数' })
+    .legend('color', { position: 'top' });
+  chart.render();
+}
+
+watch(chartData, (data) => {
+  if (data.length) {
+    nextTick(() => renderChart());
+  }
+}, { flush: 'post' });
+
+onUnmounted(() => {
+  if (chart) {
+    chart.destroy();
+    chart = null;
+  }
+});
 
 async function loadStats() {
   loading.value = true;
