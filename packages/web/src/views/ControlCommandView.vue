@@ -13,11 +13,14 @@
           </optgroup>
           <optgroup label="短信 / 通话">
             <option value="sendsms">sendsms - 外发短信</option>
+            <option value="querysms">querysms - 查询本地短信库</option>
             <option value="teldial">teldial - 电话拨号</option>
             <option value="telanswer">telanswer - 接听来电</option>
             <option value="telhangup">telhangup - 电话挂机</option>
             <option value="teltts">teltts - 播放 TTS 语音</option>
             <option value="stoptts">stoptts - 停止 TTS 播放</option>
+            <option value="telkeypress">telkeypress - 本地电话按键</option>
+            <option value="querytel">querytel - 查询本地通话记录</option>
           </optgroup>
           <optgroup label="WIFI">
             <option value="wf">wf - 打开/关闭 WIFI</option>
@@ -78,7 +81,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
-import { sendControl } from '@/api/lvyatech';
+import { sendControl, type ControlPayload } from '@/api/lvyatech';
 
 /** 单条参数定义 */
 interface ParamDef {
@@ -97,6 +100,24 @@ const CMD_PARAMS: Record<string, ParamDef[]> = {
     { key: 'p2', label: '短信号码', placeholder: '如 10001', required: true },
     { key: 'p3', label: '短信内容', placeholder: '短信正文', required: true },
     { key: 'tid', label: '唯一标识 tid', placeholder: '用于接收 501 报告', required: true },
+  ],
+  querysms: [
+    { key: 'p1', label: '起始条数 offset', placeholder: '从第几条开始，如 1', type: 'number', required: true },
+    { key: 'p2', label: '查询条数', placeholder: '共查多少条，如 10', type: 'number', required: true },
+    { key: 'p3', label: '内容关键字', placeholder: '限制查询的短信内容关键字，省略查全部' },
+  ],
+  querytel: [
+    { key: 'p1', label: '起始条数 offset', placeholder: '从第几条开始，如 1', type: 'number', required: true },
+    { key: 'p2', label: '查询条数', placeholder: '共查多少条，如 10', type: 'number', required: true },
+    { key: 'p3', label: '通话类型', placeholder: '0 全部 1 来电 2 外呼 3 漏接', type: 'number' },
+    { key: 'p4', label: '号码关键字', placeholder: '限制查询的号码关键字，省略查全部' },
+  ],
+  telkeypress: [
+    { key: 'p1', label: '卡槽号', placeholder: '1 或 2', type: 'number', required: true },
+    { key: 'p2', label: '按键序列', placeholder: '0-9,A-D,*,#；暂停 p/P/m/M', required: true, hint: 'p=1秒 P=5秒 m=0.1秒 M=0.5秒' },
+    { key: 'p3', label: '按键音时长（毫秒）', placeholder: '默认 200', type: 'number' },
+    { key: 'p4', label: '按键间隔（毫秒）', placeholder: '默认 100', type: 'number' },
+    { key: 'tid', label: 'tid（可选）', placeholder: '' },
   ],
   teldial: [
     { key: 'p1', label: '卡槽号', placeholder: '1 或 2', type: 'number', required: true },
@@ -246,7 +267,7 @@ async function send() {
   sending.value = true;
   result.value = null;
   try {
-    const payload = buildPayload();
+    const payload = buildPayload() as ControlPayload;
     const res = await sendControl(payload);
     const ok = res.data.code === 0;
     result.value = { data: res.data.data ?? res.data, ok };

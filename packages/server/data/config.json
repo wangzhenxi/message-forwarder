@@ -1,5 +1,6 @@
 {
   "push_retainDays": 7,
   "lvyatech_deviceUrl": "",
-  "lvyatech_token": ""
+  "lvyatech_token": "",
+  "push_cleanupEnabled": false
 }

@@ -4,7 +4,7 @@
  */
 export const PUSH_MESSAGE_CATEGORIES = [
   'device-status', // 设备状态消息：100,101,102,202,203,204,205,209,301
-  'call',          // 通话消息：601-603,620-623,641
+  'call',          // 通话消息：601-603,620-623,641,642
   'sms',           // 短信消息：501,502
   'other',         // 其它消息：998 等
 ] as const;
@@ -34,6 +34,7 @@ const TYPE_TO_CATEGORY: Record<number, PushMessageCategory> = {
   622: 'call',
   623: 'call',
   641: 'call',
+  642: 'call', // 通话远程按键
   // 其它
   998: 'other',
 };

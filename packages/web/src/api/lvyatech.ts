@@ -30,12 +30,17 @@ export function getMessages(params?: MessagesQuery) {
   return api.get<{ code: number; data: StoredPushMessage[] }>('/admin/lvyatech/messages', { params });
 }
 
-export function getSettings() {
-  return api.get<{ code: number; data: { retainDays: number } }>('/admin/lvyatech/settings');
+export interface PushMessageSettings {
+  retainDays: number;
+  cleanupEnabled: boolean;
 }
 
-export function putSettings(retainDays: number) {
-  return api.put<{ code: number; data: { retainDays: number } }>('/admin/lvyatech/settings', { retainDays });
+export function getSettings() {
+  return api.get<{ code: number; data: PushMessageSettings }>('/admin/lvyatech/settings');
+}
+
+export function putSettings(settings: Partial<PushMessageSettings>) {
+  return api.put<{ code: number; data: PushMessageSettings }>('/admin/lvyatech/settings', settings);
 }
 
 /** 控制指令：cmd 必填，其余为附加参数；设备地址与 token 由服务端配置文件或环境变量提供 */

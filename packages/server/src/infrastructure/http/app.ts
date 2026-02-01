@@ -13,10 +13,12 @@ export function createApp(): Koa {
   const userApp = new UserApplicationService(userRepo);
   const pushMessageStore = new PushMessageStore();
 
-  if (config.pushMessageCleanupEnabled) {
+  if (pushMessageStore.getCleanupEnabled()) {
     pushMessageStore.runCleanup();
-    setInterval(() => pushMessageStore.runCleanup(), config.pushMessageCleanupIntervalMs);
   }
+  setInterval(() => {
+    if (pushMessageStore.getCleanupEnabled()) pushMessageStore.runCleanup();
+  }, config.pushMessageCleanupIntervalMs);
 
   app.use(cors({ credentials: true }));
   app.use(bodyParser());

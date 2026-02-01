@@ -41,22 +41,40 @@ export function createLvyatechAdminRoutes(deps: LvyatechAdminRouteDeps): Router 
     ctx.body = { code: 0, data: list };
   });
 
-  /** 获取推送消息配置（保留天数） */
+  /** 获取推送消息配置（保留天数、是否启用定时清理） */
   router.get('/settings', authMiddleware, async (ctx) => {
-    ctx.body = { code: 0, data: { retainDays: pushMessageStore.getRetainDays() } };
+    ctx.body = {
+      code: 0,
+      data: {
+        retainDays: pushMessageStore.getRetainDays(),
+        cleanupEnabled: pushMessageStore.getCleanupEnabled(),
+      },
+    };
   });
 
-  /** 设置推送消息保留天数 */
+  /** 设置推送消息配置（保留天数、是否启用定时清理，可只传其一） */
   router.put('/settings', authMiddleware, async (ctx) => {
-    const body = (ctx.request.body || {}) as { retainDays?: number };
-    const retainDays = body.retainDays;
-    if (typeof retainDays !== 'number' || retainDays < 1) {
-      ctx.status = 400;
-      ctx.body = { code: 400, message: 'retainDays 须为正整数' };
-      return;
+    const body = (ctx.request.body || {}) as { retainDays?: number; cleanupEnabled?: boolean };
+    if (body.retainDays !== undefined) {
+      const retainDays = body.retainDays;
+      if (typeof retainDays !== 'number' || retainDays < 1) {
+        ctx.status = 400;
+        ctx.body = { code: 400, message: 'retainDays 须为正整数' };
+        return;
+      }
+      pushMessageStore.setRetainDays(retainDays);
     }
-    pushMessageStore.setRetainDays(retainDays);
-    ctx.body = { code: 0, message: 'ok', data: { retainDays } };
+    if (body.cleanupEnabled !== undefined) {
+      pushMessageStore.setCleanupEnabled(Boolean(body.cleanupEnabled));
+    }
+    ctx.body = {
+      code: 0,
+      message: 'ok',
+      data: {
+        retainDays: pushMessageStore.getRetainDays(),
+        cleanupEnabled: pushMessageStore.getCleanupEnabled(),
+      },
+    };
   });
 
   /**

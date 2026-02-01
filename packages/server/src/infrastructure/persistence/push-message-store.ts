@@ -113,6 +113,18 @@ export class PushMessageStore {
     writeDataConfig({ push_retainDays: days });
   }
 
+  /** 是否启用推送消息定时清理（data/config 优先，未设置时用环境变量默认值） */
+  getCleanupEnabled(): boolean {
+    const c = readDataConfig();
+    if (typeof c.push_cleanupEnabled === 'boolean') return c.push_cleanupEnabled;
+    return config.pushMessageCleanupEnabled;
+  }
+
+  /** 设置是否启用定时清理 */
+  setCleanupEnabled(enabled: boolean): void {
+    writeDataConfig({ push_cleanupEnabled: enabled });
+  }
+
   /** 删除早于指定天数的按日数据文件（遍历各分类目录及 raw 调试目录） */
   deleteFilesOlderThan(days: number): number {
     const cutoff = new Date();

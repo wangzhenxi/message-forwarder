@@ -6,6 +6,8 @@ import { config } from '../../config';
 export interface DataConfig {
   /** 推送消息保留天数 */
   push_retainDays?: number;
+  /** 是否启用推送消息定时清理（未设置时由环境变量 PUSH_MESSAGE_CLEANUP_ENABLED 决定） */
+  push_cleanupEnabled?: boolean;
   /** 绿芽设备地址 */
   lvyatech_deviceUrl?: string;
   /** 绿芽设备 token */
