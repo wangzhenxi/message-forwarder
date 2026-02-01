@@ -61,6 +61,8 @@ docker run -d -p 80:80 \
   --name message-forwarder message-forwarder
 ```
 
+推送到 `main` 或打 `v*` 标签后，[GitHub Actions](.github/workflows/docker-publish.yml) 会自动构建并发布到 [GitHub Container Registry](https://docs.github.com/zh/packages/working-with-a-github-packages-registry/working-with-the-container-registry)，拉取示例（将 `OWNER/REPO` 换成本仓库）：`docker pull ghcr.io/OWNER/REPO:latest`。
+
 - 不挂载 `data` 时，用户与推送数据仅在容器内，删除容器即丢失
 - 环境变量见 [配置](#配置)，可用 `-e` 传入
 

@@ -15,6 +15,7 @@
             placeholder="用户名"
             autocomplete="username"
             size="large"
+            @keyup.enter="handleSubmit"
           />
         </a-form-item>
         <a-form-item label="密码" name="password" :rules="[{ required: true, message: '请输入密码' }]">
@@ -23,6 +24,7 @@
             placeholder="密码"
             autocomplete="current-password"
             size="large"
+            @keyup.enter="handleSubmit"
           />
         </a-form-item>
         <a-alert v-if="error" type="error" :message="error" show-icon style="margin-bottom: 16px" />
