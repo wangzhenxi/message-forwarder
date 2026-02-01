@@ -46,17 +46,22 @@ pnpm dev:server   # 后端 http://localhost:3000
 pnpm dev:web      # 前端 http://localhost:5173，代理 /api -> 3000
 ```
 
-## 演示账号
+## 用户数据
 
-- 用户名: `admin`  
-- 密码: `admin123`
+无默认用户。首次启动后用户数据文件为 `server/data/users.json`（空数组）。可手动编辑该文件添加用户，格式示例：
 
-另有用户 `user1` / `123456` 可登录。用户列表接口需登录后访问（请求头带 `Authorization: Bearer <token>`）。
+```json
+[
+  { "id": "1", "username": "admin", "passwordHash": "admin123", "nickname": "管理员", "role": "admin", "createdAt": "2024-01-01T00:00:00.000Z" }
+]
+```
+
+用户列表等接口需登录后访问（请求头带 `Authorization: Bearer <token>`）。
 
 ## 后端 DDD 说明
 
 - **领域层**：定义 `User` 实体与 `IUserRepository` 接口，不依赖框架。
 - **应用层**：`UserApplicationService` 编排登录、列表等用例，入参/出参为 DTO。
-- **基础设施层**：实现 `InMemoryUserRepository`、Koa 路由与认证中间件，在 `app.ts` 中组装并注入应用服务。
+- **基础设施层**：实现 `FileUserRepository`（本地 JSON 文件持久化）、Koa 路由与认证中间件，在 `app.ts` 中组装并注入应用服务。
 
 后续可替换为真实数据库仓储、增加更多领域与接口。

@@ -21,7 +21,7 @@
         <p v-if="error" class="error">{{ error }}</p>
         <button type="submit" class="btn" :disabled="loading">登录</button>
       </form>
-      <p class="hint">演示账号：admin / admin123</p>
+      <p class="hint">无默认账号，可在 server/data/users.json 中添加用户</p>
     </div>
   </div>
 </template>

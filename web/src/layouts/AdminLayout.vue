@@ -3,8 +3,8 @@
     <aside class="sidebar">
       <div class="logo">管理后台</div>
       <nav class="nav">
-        <router-link to="/" active-class="active">仪表盘</router-link>
-        <router-link to="/users" active-class="active">用户列表</router-link>
+        <router-link to="/" exact-active-class="active">仪表盘</router-link>
+        <router-link to="/users" exact-active-class="active">用户列表</router-link>
       </nav>
       <div class="user-bar">
         <span class="nickname">{{ userStore.user?.nickname ?? userStore.user?.username }}</span>
