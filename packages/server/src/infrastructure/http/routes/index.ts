@@ -1,11 +1,13 @@
 import type Koa from 'koa';
 import type Router from 'koa-router';
 import type { UserApplicationService } from '../../../application/user/user-application-service';
+import type { PushMessageStore } from '../../persistence/push-message-store';
 import { createUserRoutes } from './user-routes';
 import { createLvyatechRoutes } from './lvyatech-routes';
 
 export interface RouteDeps {
   userApp: UserApplicationService;
+  pushMessageStore: PushMessageStore;
 }
 
 /**
@@ -16,7 +18,7 @@ export interface RouteDeps {
 export function registerRoutes(app: Koa, deps: RouteDeps): void {
   const routers: Router[] = [
     createUserRoutes(deps.userApp),
-    createLvyatechRoutes(),
+    createLvyatechRoutes({ pushMessageStore: deps.pushMessageStore }),
   ];
   for (const router of routers) {
     app.use(router.routes());

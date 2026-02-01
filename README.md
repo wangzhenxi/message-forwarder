@@ -51,7 +51,7 @@ pnpm dev:web      # 前端 http://localhost:5173，代理 /api -> 3000
 
 ## 用户数据
 
-无默认用户。首次启动后用户数据文件为 `packages/server/data/users.json`（空数组）。可手动编辑该文件添加用户，格式示例：
+无默认用户。首次启动后用户数据文件为 `packages/server/data/user/users.json`（空数组）。可手动编辑该文件添加用户，格式示例：
 
 ```json
 [
@@ -75,7 +75,10 @@ pnpm dev:web      # 前端 http://localhost:5173，代理 /api -> 3000
 
 - **packages/lvyatech**：解析 HTTP Form/JSON、TCP 报文；消息结构 `devId`、`type` 及系统/用户参数；模板展开 `{{系统参数}}`、`{{{用户参数}}}`
 - **server 接入**：
-  - `POST /api/lvyatech/push`：开发板可配置为此地址，支持 `application/x-www-form-urlencoded` 与 `application/json`，返回解析后的消息
+  - `POST /api/lvyatech/push`：开发板可配置为此地址，支持 `application/x-www-form-urlencoded` 与 `application/json`，收到后写入当日 JSONL 文件并返回解析结果
+  - `GET /api/lvyatech/messages`：后台查询推送消息（需登录），查询参数 `devId`、`type`、`from`（YYYY-MM-DD）、`to`、`limit`
+  - `GET /api/lvyatech/settings`：获取推送消息配置（保留天数，需登录）
+  - `PUT /api/lvyatech/settings`：设置保留天数（需登录），超过天数的按日文件会被定时清理（启动时 + 每 24 小时）
   - `POST /api/lvyatech/expand`：测试用，对给定 `template` 与 `context` 做参数引用展开
 
-协议与参数说明见 `docs/lvyatech`。
+推送消息按日存储为 `data/push-messages/YYYY-MM-DD.jsonl`，可通过环境变量 `PUSH_MESSAGE_DATA_DIR`、`PUSH_MESSAGE_RETAIN_DAYS` 或后台配置保留天数。协议与参数说明见 `docs/lvyatech`。
