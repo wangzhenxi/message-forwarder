@@ -1,39 +1,28 @@
-# SIM卡管理后台
+# message-forwarder
 
-基于 **pnpm + Koa + TypeScript + Vue 3**，按 **DDD（领域驱动设计）** 搭建的 SIM 卡管理后台。
+绿芽开发板推送消息接收与管理后台：接收设备推送、按分类存储与查询、向设备下发控制指令；带用户登录与 DDD 分层后端、Vue 3 管理界面。
+
+## 功能
+
+- **推送接入**：接收绿芽开发板 HTTP 推送（Form/JSON），按消息类型写入当日 JSONL（device-status / call / sms / other）
+- **消息管理**：按分类、设备、时间筛选查询；可配置保留天数与定时清理
+- **控制指令**：登录后向设备代理下发控制指令（通话、短信、WiFi、重启等），详见 `docs/lvyatech/控制指令`
+- **用户与鉴权**：用户列表、登录态（Token），管理端接口需登录后访问
 
 ## 技术栈
 
-- **包管理**: pnpm workspace 单体仓库
-- **后端**: Koa + TypeScript，DDD 分层（domain / application / infrastructure）
-- **前端**: Vue 3 + Vite + Vue Router + Pinia + TypeScript
+| 层级     | 技术 |
+|----------|------|
+| 包管理   | pnpm workspace 单体仓库 |
+| 后端     | Koa + TypeScript，DDD（domain / application / infrastructure） |
+| 前端     | Vue 3 + Vite + Vue Router + Pinia + TypeScript |
+| 协议解析 | `packages/lvyatech`：推送解析、模板展开、消息分类 |
+| 生产部署 | Docker 单镜像：Nginx 托管前端并反代 `/api`，Node 仅 API |
 
-## 项目结构
+## 环境要求
 
-```
-message-forwarder/
-├── packages/
-│   ├── server/             # 后端 (Koa + TS, DDD)
-│   │   └── src/
-│   │       ├── domain/         # 领域层：实体、仓储接口
-│   │       │   └── user/
-│   │       ├── application/    # 应用层：DTO、应用服务
-│   │       │   └── user/
-│   │       ├── infrastructure/ # 基础设施层：仓储实现、HTTP、中间件
-│   │       │   ├── persistence/
-│   │       │   └── http/
-│   │       └── index.ts
-│   ├── lvyatech/           # 绿芽开发板推送协议（解析 + 模板展开）
-│   └── web/                # 前端 (Vue 3 + Vite)
-│       └── src/
-│           ├── api/            # 请求封装
-│           ├── layouts/        # 布局
-│           ├── router/         # 路由与鉴权
-│           ├── stores/         # Pinia 状态
-│           └── views/          # 页面
-├── pnpm-workspace.yaml
-└── package.json
-```
+- **Node** ≥ 22（推荐 [nvm](https://github.com/nvm-sh/nvm) / [fnm](https://github.com/Schniz/fnm)，根目录有 `.nvmrc`）
+- **pnpm** ≥ 9（`corepack enable` 后使用根目录 `packageManager` 版本）
 
 ## 快速开始
 
@@ -41,48 +30,88 @@ message-forwarder/
 # 安装依赖
 pnpm install
 
-# 同时启动后端 + 前端（推荐）
+# 开发：后端 3000 + 前端 5173（前端代理 /api -> 3000）
 pnpm dev
-
-# 或分别启动
-pnpm dev:server   # 后端 http://localhost:3000
-pnpm dev:web      # 前端 http://localhost:5173，代理 /api -> 3000
 ```
 
-## 用户数据
+- 后端：<http://localhost:3000>
+- 前端：<http://localhost:5173>
+- 单独启动：`pnpm dev:server` / `pnpm dev:web`
 
-无默认用户。首次启动后用户数据文件为 `packages/server/data/users.json`（空数组）。可手动编辑该文件添加用户，格式示例：
+## 构建与运行
 
-```json
-[
-  { "id": "1", "username": "admin", "passwordHash": "admin123", "nickname": "管理员", "role": "admin", "createdAt": "2024-01-01T00:00:00.000Z" }
-]
+```bash
+# 全量构建
+pnpm build
+
+# 生产运行（需先构建）
+pnpm --filter @message-forwarder/server start
 ```
 
-用户列表等接口需登录后访问（请求头带 `Authorization: Bearer <token>`）。
+前端构建产物需由 Nginx 等托管并反代 `/api`，或使用下方 Docker 方式。
 
-## 后端 DDD 说明
+## Docker
 
-- **领域层**：定义 `User` 实体与 `IUserRepository` 接口，不依赖框架。
-- **应用层**：`UserApplicationService` 编排登录、列表等用例，入参/出参为 DTO。
-- **基础设施层**：实现 `FileUserRepository`（本地 JSON 文件持久化）、Koa 路由与认证中间件，在 `app.ts` 中组装并注入应用服务。
+单镜像：Nginx 托管前端并反代 `/api`，Node 仅提供 API，对外 80 端口。
 
-后续可替换为真实数据库仓储、增加更多领域与接口。
+```bash
+docker build -t message-forwarder .
+docker run -d -p 80:80 \
+  -v /path/to/data:/app/packages/server/data \
+  --name message-forwarder message-forwarder
+```
 
-## 绿芽开发板推送（lvyatech）
+- 不挂载 `data` 时，用户与推送数据仅在容器内，删除容器即丢失
+- 环境变量见 [配置](#配置)，可用 `-e` 传入
 
-基于 `docs/lvyatech` 文档，将开发板推送能力封装为独立包 `packages/lvyatech`，并在 server 中接入：
+## 配置
 
-- **packages/lvyatech**：解析 HTTP Form/JSON、TCP 报文；消息结构 `devId`、`type` 及系统/用户参数；模板展开 `{{系统参数}}`、`{{{用户参数}}}`；消息类型与分类映射（device-status / call / sms / other）。
-- **server 接入**（开发板与管理后台分离）：
-  - **开发板调用**（无鉴权）`/api/lvyatech`：
-    - `POST /api/lvyatech/push`：推送入口，支持 Form/JSON，按消息 type 写入对应分类的当日 JSONL
-    - `POST /api/lvyatech/expand`：测试用模板展开
-  - **管理后台调用**（需登录）`/api/admin/lvyatech`：
-    - `GET /api/admin/lvyatech/categories`：推送消息分类列表（供筛选）
-    - `GET /api/admin/lvyatech/messages`：查询推送消息，参数 `category`、`devId`、`type`、`from`、`to`、`limit`
-    - `GET /api/admin/lvyatech/settings`：获取保留天数
-    - `PUT /api/admin/lvyatech/settings`：设置保留天数
-    - `POST /api/admin/lvyatech/control`：向开发板下发控制指令（代理到设备 `/ctrl`），body 仅需 `{ cmd, ...params }`；设备地址与 token 由 `data/config.json`（`lvyatech_deviceUrl`、`lvyatech_token`）或环境变量 `LVYATECH_DEVICE_URL`、`LVYATECH_DEVICE_TOKEN` 提供。
+复制 `.env.example` 为 `.env` 后按需修改；或通过环境变量覆盖。
 
-推送消息按分类按日存储为 `data/push-messages/{category}/YYYY-MM-DD.jsonl`（category：device-status / call / sms / other），保留天数等配置在 `data/config.json`（`push_retainDays`）或后台设置。控制指令格式见 `docs/lvyatech/控制指令`。下发控制指令前请编辑 `packages/server/data/config.json` 填写 `lvyatech_deviceUrl` 与 `lvyatech_token`（或配置上述环境变量）。
+| 变量 | 说明 | 默认 |
+|------|------|------|
+| `PORT` | 服务端口 | 3000 |
+| `DATA_CONFIG_PATH` | 统一配置（push_*、lvyatech_*） | server/data/config.json |
+| `USER_DATA_FILE` | 用户数据文件 | server/data/users.json |
+| `PUSH_MESSAGE_DATA_DIR` | 推送按日存储目录 | server/data/push-messages |
+| `PUSH_MESSAGE_RETAIN_DAYS` | 推送保留天数 | 7 |
+| `PUSH_MESSAGE_CLEANUP_ENABLED` | 是否定时清理 | false |
+| `LVYATECH_DEVICE_URL` / `LVYATECH_DEVICE_TOKEN` | 控制指令设备地址与 Token | 可写在 data/config.json |
+
+## 用户与鉴权
+
+- 无默认用户；首次运行后 `packages/server/data/users.json` 为空数组，可手动按示例格式添加用户
+- 管理端接口需在请求头携带 `Authorization: Bearer <token>`（登录接口返回 token）
+
+## 项目结构
+
+```
+message-forwarder/
+├── packages/
+│   ├── server/          # 后端：Koa + DDD
+│   │   └── src/
+│   │       ├── domain/        # 实体、仓储接口
+│   │       ├── application/  # 应用服务、DTO
+│   │       └── infrastructure/  # 持久化、HTTP、鉴权
+│   ├── lvyatech/        # 绿芽推送解析、模板展开、分类
+│   └── web/             # 前端：Vue 3 + Vite
+├── docker/               # Nginx 配置与容器启动脚本
+├── docs/lvyatech/        # 绿芽协议、控制指令、推送消息说明
+├── pnpm-workspace.yaml
+└── package.json
+```
+
+## 绿芽接入说明
+
+- **开发板推送**（无鉴权）：`POST /api/lvyatech/push`、`POST /api/lvyatech/expand`
+- **管理端**（需登录）：`/api/admin/lvyatech` 下 categories、messages、settings、control 等
+- 推送按日存储：`data/push-messages/{category}/YYYY-MM-DD.jsonl`
+- 协议与控制指令详见：`docs/lvyatech/`（推送消息、控制指令、设备管理后台等）
+
+## License
+
+[MIT](LICENSE)。使用、修改与再分发须保留版权与许可声明。
+
+## 免责声明
+
+本项目仅供学习与参考。若您认为本仓库中的任何内容侵犯您的知识产权或其他权益，请通过仓库 Issue 或与维护者联系，我们将在核实后及时删除相关内容。

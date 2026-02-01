@@ -1,0 +1,39 @@
+# 依赖与锁文件（Docker 内重新 install）
+node_modules/
+.pnpm-store/
+
+# 构建产物（在镜像内重新 build）
+dist/
+build/
+packages/server/dist/
+packages/web/dist/
+
+# 环境与本地数据
+.env
+.env.*
+!.env.example
+packages/server/data/push-messages/
+*.log
+
+# 开发与文档
+.git/
+.gitignore
+.cursor/
+docs/
+*.md
+!README.md
+
+# IDE、测试、缓存
+.idea/
+.vscode/
+coverage/
+.nyc_output/
+.cache/
+.temp/
+tmp/
+*.tsbuildinfo
+.DS_Store
+
+# 其它
+*.local
+Thumbs.db

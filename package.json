@@ -1,6 +1,11 @@
 {
   "name": "message-forwarder",
   "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=9"
+  },
   "pnpm": {
     "overrides": {
       "is-generator-function": "1.0.10"
