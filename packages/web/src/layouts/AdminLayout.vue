@@ -5,6 +5,9 @@
       <nav class="nav">
         <router-link to="/" exact-active-class="active">仪表盘</router-link>
         <router-link to="/users" exact-active-class="active">用户列表</router-link>
+        <router-link to="/push-messages" active-class="active">推送消息</router-link>
+        <router-link to="/push-messages/settings" active-class="active">推送配置</router-link>
+        <router-link to="/control" exact-active-class="active">控制指令</router-link>
       </nav>
       <div class="user-bar">
         <span class="nickname">{{ userStore.user?.nickname ?? userStore.user?.username }}</span>

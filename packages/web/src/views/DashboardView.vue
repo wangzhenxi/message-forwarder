@@ -7,6 +7,9 @@
         <div class="card-title">快捷入口</div>
         <div class="links">
           <router-link to="/users" class="link">用户列表</router-link>
+          <router-link to="/push-messages" class="link">推送消息</router-link>
+          <router-link to="/push-messages/settings" class="link">推送配置</router-link>
+          <router-link to="/control" class="link">控制指令</router-link>
         </div>
       </div>
     </div>

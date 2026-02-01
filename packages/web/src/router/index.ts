@@ -12,6 +12,9 @@ const router = createRouter({
       children: [
         { path: '', name: 'Dashboard', component: () => import('@/views/DashboardView.vue') },
         { path: 'users', name: 'UserList', component: () => import('@/views/UserListView.vue') },
+        { path: 'push-messages', name: 'PushMessages', component: () => import('@/views/PushMessagesView.vue') },
+        { path: 'push-messages/settings', name: 'PushMessageSettings', component: () => import('@/views/PushMessageSettingsView.vue') },
+        { path: 'control', name: 'ControlCommand', component: () => import('@/views/ControlCommandView.vue') },
       ],
     },
   ],

@@ -3,7 +3,8 @@ import type Router from 'koa-router';
 import type { UserApplicationService } from '../../../application/user/user-application-service';
 import type { PushMessageStore } from '../../persistence/push-message-store';
 import { createUserRoutes } from './user-routes';
-import { createLvyatechRoutes } from './lvyatech-routes';
+import { createLvyatechDeviceRoutes } from './lvyatech-device-routes';
+import { createLvyatechAdminRoutes } from './lvyatech-admin-routes';
 
 export interface RouteDeps {
   userApp: UserApplicationService;
@@ -16,9 +17,11 @@ export interface RouteDeps {
  * 2. 在本文件顶部 import，并在下方注册（无需改 app.ts）
  */
 export function registerRoutes(app: Koa, deps: RouteDeps): void {
+  const lvyatechDeps = { pushMessageStore: deps.pushMessageStore };
   const routers: Router[] = [
     createUserRoutes(deps.userApp),
-    createLvyatechRoutes({ pushMessageStore: deps.pushMessageStore }),
+    createLvyatechDeviceRoutes(lvyatechDeps),
+    createLvyatechAdminRoutes(lvyatechDeps),
   ];
   for (const router of routers) {
     app.use(router.routes());

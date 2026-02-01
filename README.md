@@ -73,12 +73,16 @@ pnpm dev:web      # 前端 http://localhost:5173，代理 /api -> 3000
 
 基于 `docs/lvyatech` 文档，将开发板推送能力封装为独立包 `packages/lvyatech`，并在 server 中接入：
 
-- **packages/lvyatech**：解析 HTTP Form/JSON、TCP 报文；消息结构 `devId`、`type` 及系统/用户参数；模板展开 `{{系统参数}}`、`{{{用户参数}}}`
-- **server 接入**：
-  - `POST /api/lvyatech/push`：开发板可配置为此地址，支持 `application/x-www-form-urlencoded` 与 `application/json`，收到后写入当日 JSONL 文件并返回解析结果
-  - `GET /api/lvyatech/messages`：后台查询推送消息（需登录），查询参数 `devId`、`type`、`from`（YYYY-MM-DD）、`to`、`limit`
-  - `GET /api/lvyatech/settings`：获取推送消息配置（保留天数，需登录）
-  - `PUT /api/lvyatech/settings`：设置保留天数（需登录），超过天数的按日文件会被定时清理（启动时 + 每 24 小时）
-  - `POST /api/lvyatech/expand`：测试用，对给定 `template` 与 `context` 做参数引用展开
+- **packages/lvyatech**：解析 HTTP Form/JSON、TCP 报文；消息结构 `devId`、`type` 及系统/用户参数；模板展开 `{{系统参数}}`、`{{{用户参数}}}`；消息类型与分类映射（device-status / call / sms / other）。
+- **server 接入**（开发板与管理后台分离）：
+  - **开发板调用**（无鉴权）`/api/lvyatech`：
+    - `POST /api/lvyatech/push`：推送入口，支持 Form/JSON，按消息 type 写入对应分类的当日 JSONL
+    - `POST /api/lvyatech/expand`：测试用模板展开
+  - **管理后台调用**（需登录）`/api/admin/lvyatech`：
+    - `GET /api/admin/lvyatech/categories`：推送消息分类列表（供筛选）
+    - `GET /api/admin/lvyatech/messages`：查询推送消息，参数 `category`、`devId`、`type`、`from`、`to`、`limit`
+    - `GET /api/admin/lvyatech/settings`：获取保留天数
+    - `PUT /api/admin/lvyatech/settings`：设置保留天数
+    - `POST /api/admin/lvyatech/control`：向开发板下发控制指令（代理到设备 `/ctrl`），body：`{ deviceUrl, token?, cmd, ...params }`
 
-推送消息按日存储为 `data/push-messages/YYYY-MM-DD.jsonl`，可通过环境变量 `PUSH_MESSAGE_DATA_DIR`、`PUSH_MESSAGE_RETAIN_DAYS` 或后台配置保留天数。协议与参数说明见 `docs/lvyatech`。
+推送消息按分类按日存储为 `data/push-messages/{category}/YYYY-MM-DD.jsonl`（category：device-status / call / sms / other），可通过环境变量或后台配置保留天数。控制指令格式见 `docs/lvyatech/控制指令`。

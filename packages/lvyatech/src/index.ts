@@ -5,5 +5,7 @@
  * - 模板：{{系统参数}}、{{{用户参数}}} 替换
  */
 export type { LvyatechMessage, LvyatechContext } from './types';
+export type { PushMessageCategory } from './categories';
+export { PUSH_MESSAGE_CATEGORIES, typeToCategory } from './categories';
 export { parseFormBody, parseJsonBody, parseTcpPayload } from './parse';
 export { messageToContext, expandTemplate } from './expand';
