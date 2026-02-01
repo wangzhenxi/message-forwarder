@@ -16,4 +16,6 @@ export const config = {
   pushMessageDataDir: env('PUSH_MESSAGE_DATA_DIR', path.join(__dirname, '..', 'data', 'push-messages')),
   /** 推送消息默认保留天数（超过则删除旧文件），可在后台配置覆盖 */
   pushMessageRetainDaysDefault: Number(env('PUSH_MESSAGE_RETAIN_DAYS', '7')) || 7,
+  /** 控制指令配置：设备地址与 token 的配置文件路径（可被环境变量覆盖） */
+  lvyatechControlConfigPath: path.join(__dirname, '..', 'data', 'lvyatech', 'control.json'),
 };

@@ -83,6 +83,6 @@ pnpm dev:web      # 前端 http://localhost:5173，代理 /api -> 3000
     - `GET /api/admin/lvyatech/messages`：查询推送消息，参数 `category`、`devId`、`type`、`from`、`to`、`limit`
     - `GET /api/admin/lvyatech/settings`：获取保留天数
     - `PUT /api/admin/lvyatech/settings`：设置保留天数
-    - `POST /api/admin/lvyatech/control`：向开发板下发控制指令（代理到设备 `/ctrl`），body：`{ deviceUrl, token?, cmd, ...params }`
+    - `POST /api/admin/lvyatech/control`：向开发板下发控制指令（代理到设备 `/ctrl`），body 仅需 `{ cmd, ...params }`；设备地址与 token 由配置文件 `data/lvyatech/control.json` 或环境变量 `LVYATECH_DEVICE_URL`、`LVYATECH_DEVICE_TOKEN` 提供。
 
-推送消息按分类按日存储为 `data/push-messages/{category}/YYYY-MM-DD.jsonl`（category：device-status / call / sms / other），可通过环境变量或后台配置保留天数。控制指令格式见 `docs/lvyatech/控制指令`。
+推送消息按分类按日存储为 `data/push-messages/{category}/YYYY-MM-DD.jsonl`（category：device-status / call / sms / other），可通过环境变量或后台配置保留天数。控制指令格式见 `docs/lvyatech/控制指令`。下发控制指令前请编辑 `packages/server/data/lvyatech/control.json` 填写 `deviceUrl` 与 `token`（或配置上述环境变量）。

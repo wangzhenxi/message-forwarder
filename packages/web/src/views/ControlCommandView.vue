@@ -1,16 +1,8 @@
 <template>
   <div class="control-command">
     <h1 class="title">控制指令</h1>
-    <p class="intro">向开发板下发控制指令（代理到设备 /ctrl 接口）。格式见文档「控制指令」。</p>
+    <p class="intro">向开发板下发控制指令（代理到设备 /ctrl 接口）。设备地址与 token 由服务端配置文件 <code>data/lvyatech/control.json</code> 或环境变量传入。</p>
     <div class="card">
-      <div class="field">
-        <label>设备地址 <span class="required">*</span></label>
-        <input v-model="form.deviceUrl" type="text" placeholder="http://192.168.7.170:38585" />
-      </div>
-      <div class="field">
-        <label>Token</label>
-        <input v-model="form.token" type="text" placeholder="开发板 token（控制指令必填）" />
-      </div>
       <div class="field">
         <label>指令 cmd <span class="required">*</span></label>
         <select v-model="form.cmd">
@@ -51,8 +43,6 @@ import { ref, reactive, computed } from 'vue';
 import { sendControl } from '@/api/lvyatech';
 
 const form = reactive({
-  deviceUrl: '',
-  token: '',
   cmd: '',
   cmdOther: '',
   extraParams: '',
@@ -83,19 +73,16 @@ function parseExtraParams(): Record<string, string> {
 }
 
 async function send() {
-  const deviceUrl = form.deviceUrl.trim();
   const cmd = form.cmd === 'other' ? form.cmdOther.trim() : form.cmd.trim();
-  if (!deviceUrl || !cmd) {
-    result.value = { data: '请填写设备地址和指令', ok: false };
+  if (!cmd) {
+    result.value = { data: '请选择或填写指令', ok: false };
     return;
   }
   sending.value = true;
   result.value = null;
   try {
     const payload: Record<string, unknown> = {
-      deviceUrl,
       cmd,
-      ...(form.token.trim() ? { token: form.token.trim() } : {}),
       ...parseExtraParams(),
     };
     const res = await sendControl(payload);
@@ -126,6 +113,12 @@ async function send() {
   color: #6b7280;
   font-size: 14px;
   margin-bottom: 20px;
+}
+.intro code {
+  font-size: 13px;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 .card {
   background: #fff;

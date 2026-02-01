@@ -38,9 +38,8 @@ export function putSettings(retainDays: number) {
   return api.put<{ code: number; data: { retainDays: number } }>('/admin/lvyatech/settings', { retainDays });
 }
 
+/** 控制指令：cmd 必填，其余为附加参数；设备地址与 token 由服务端配置文件或环境变量提供 */
 export interface ControlPayload {
-  deviceUrl: string;
-  token?: string;
   cmd: string;
   [key: string]: unknown;
 }

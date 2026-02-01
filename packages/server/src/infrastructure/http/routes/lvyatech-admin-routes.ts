@@ -1,7 +1,9 @@
+import { readFileSync, existsSync } from 'fs';
 import Router from 'koa-router';
 import type { PushMessageStore } from '../../persistence/push-message-store';
 import { authMiddleware } from '../middleware/auth';
 import { PUSH_MESSAGE_CATEGORIES } from '@message-forwarder/lvyatech';
+import { config } from '../../../config';
 
 export interface LvyatechAdminRouteDeps {
   pushMessageStore: PushMessageStore;
@@ -60,15 +62,17 @@ export function createLvyatechAdminRoutes(deps: LvyatechAdminRouteDeps): Router 
 
   /**
    * 向开发板下发控制指令（代理到设备 /ctrl 接口）
-   * body: { deviceUrl: string, token?: string, cmd: string, ...params }
-   * 开发板控制指令格式见 docs/lvyatech/控制指令
+   * 设备地址与 token 从配置文件 data/lvyatech/control.json 或环境变量 LVYATECH_DEVICE_URL、LVYATECH_DEVICE_TOKEN 读取；body 可仅传 cmd 与附加参数
    */
   router.post('/control', authMiddleware, async (ctx) => {
     const body = (ctx.request.body || {}) as Record<string, unknown>;
-    const { deviceUrl, token, cmd, ...rest } = body;
-    if (typeof deviceUrl !== 'string' || !deviceUrl) {
+    const { deviceUrl: bodyUrl, token: bodyToken, cmd, ...rest } = body;
+    const { deviceUrl: configUrl, token: configToken } = loadControlConfig();
+    const deviceUrl = (typeof bodyUrl === 'string' && bodyUrl.trim()) || process.env.LVYATECH_DEVICE_URL || configUrl;
+    const token = (typeof bodyToken === 'string' && bodyToken.trim()) || process.env.LVYATECH_DEVICE_TOKEN || configToken;
+    if (!deviceUrl) {
       ctx.status = 400;
-      ctx.body = { code: 400, message: 'deviceUrl 必填' };
+      ctx.body = { code: 400, message: '请先配置设备地址：编辑 data/lvyatech/control.json 或设置环境变量 LVYATECH_DEVICE_URL' };
       return;
     }
     if (typeof cmd !== 'string' || !cmd) {
@@ -79,7 +83,7 @@ export function createLvyatechAdminRoutes(deps: LvyatechAdminRouteDeps): Router 
     const base = deviceUrl.replace(/\/+$/, '');
     const ctrlUrl = base.includes('/ctrl') ? base : `${base}/ctrl`;
     const params = new URLSearchParams();
-    if (typeof token === 'string' && token) params.set('token', token);
+    if (token) params.set('token', token);
     params.set('cmd', cmd);
     for (const [k, v] of Object.entries(rest)) {
       if (v !== undefined && v !== null && v !== '') {
@@ -108,6 +112,23 @@ export function createLvyatechAdminRoutes(deps: LvyatechAdminRouteDeps): Router 
   });
 
   return router;
+}
+
+function loadControlConfig(): { deviceUrl: string; token: string } {
+  const path = config.lvyatechControlConfigPath;
+  try {
+    if (existsSync(path)) {
+      const raw = readFileSync(path, 'utf8');
+      const o = JSON.parse(raw) as { deviceUrl?: string; token?: string };
+      return {
+        deviceUrl: typeof o.deviceUrl === 'string' ? o.deviceUrl.trim() : '',
+        token: typeof o.token === 'string' ? o.token.trim() : '',
+      };
+    }
+  } catch {
+    // ignore
+  }
+  return { deviceUrl: '', token: '' };
 }
 
 function categoryLabel(id: string): string {
