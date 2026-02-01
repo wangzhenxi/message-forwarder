@@ -12,7 +12,7 @@ export class ExternalApiClient {
 
   private async request<T>(
     path: string,
-    options: RequestInit & { method?: string; body?: unknown } = {}
+    options: Omit<RequestInit, 'body'> & { method?: string; body?: unknown } = {}
   ): Promise<T> {
     const { method = 'GET', body, headers: customHeaders, ...rest } = options;
     const url = path.startsWith('http') ? path : `${this.baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
@@ -23,7 +23,7 @@ export class ExternalApiClient {
     const res = await fetch(url, {
       method,
       headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: (body !== undefined ? JSON.stringify(body) : undefined) as BodyInit | undefined,
       ...rest,
     });
     if (!res.ok) {
@@ -40,11 +40,11 @@ export class ExternalApiClient {
   }
 
   async post<T>(path: string, body?: unknown, headers?: RequestInit['headers']): Promise<T> {
-    return this.request<T>(path, { method: 'POST', body: body ?? {}, headers });
+    return this.request<T>(path, { method: 'POST', body: body !== undefined ? body : undefined, headers });
   }
 
   async put<T>(path: string, body?: unknown, headers?: RequestInit['headers']): Promise<T> {
-    return this.request<T>(path, { method: 'PUT', body: body ?? {}, headers });
+    return this.request<T>(path, { method: 'PUT', body: body !== undefined ? body : undefined, headers });
   }
 
   async delete<T>(path: string, headers?: RequestInit['headers']): Promise<T> {

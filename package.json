@@ -8,8 +8,8 @@
   },
   "scripts": {
     "dev": "pnpm -r --parallel run dev",
-    "dev:server": "pnpm --filter server run dev",
-    "dev:web": "pnpm --filter web run dev",
+    "dev:server": "pnpm --filter @message-forwarder/server run dev",
+    "dev:web": "pnpm --filter @message-forwarder/web run dev",
     "build": "pnpm -r run build"
   },
   "devDependencies": {
