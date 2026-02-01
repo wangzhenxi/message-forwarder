@@ -1,5 +1,5 @@
 /**
- * 绿亚开发板推送消息（基于 docs/lvyatech）
+ * 绿芽开发板推送消息（基于 docs/lvyatech）
  * - devId: 设备唯一 ID
  * - type: 消息 ID（如 100=WIFI 已联网）
  * - 其余为系统/用户参数

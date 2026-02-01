@@ -7,12 +7,12 @@ import {
 } from '@message-forwarder/lvyatech';
 
 /**
- * 绿亚开发板推送接入（基于 docs/lvyatech）
+ * 绿芽开发板推送接入（基于 docs/lvyatech）
  * - 接收 HTTP Form 或 JSON，解析为统一消息结构
  * - 可选：按模板展开后转发（如钉钉 webhook）
  */
-export function createDeviceRoutes(): Router {
-  const router = new Router({ prefix: '/api/device' });
+export function createLvyatechRoutes(): Router {
+  const router = new Router({ prefix: '/api/lvyatech' });
 
   /**
    * 推送入口：开发板可配置此地址为 HTTP 接口

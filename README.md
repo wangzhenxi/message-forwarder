@@ -23,7 +23,7 @@ message-forwarder/
 │   │       │   ├── persistence/
 │   │       │   └── http/
 │   │       └── index.ts
-│   ├── lvyatech/           # 绿亚开发板推送协议（解析 + 模板展开）
+│   ├── lvyatech/           # 绿芽开发板推送协议（解析 + 模板展开）
 │   └── web/                # 前端 (Vue 3 + Vite)
 │       └── src/
 │           ├── api/            # 请求封装
@@ -69,13 +69,13 @@ pnpm dev:web      # 前端 http://localhost:5173，代理 /api -> 3000
 
 后续可替换为真实数据库仓储、增加更多领域与接口。
 
-## 绿亚开发板推送（lvyatech）
+## 绿芽开发板推送（lvyatech）
 
 基于 `docs/lvyatech` 文档，将开发板推送能力封装为独立包 `packages/lvyatech`，并在 server 中接入：
 
 - **packages/lvyatech**：解析 HTTP Form/JSON、TCP 报文；消息结构 `devId`、`type` 及系统/用户参数；模板展开 `{{系统参数}}`、`{{{用户参数}}}`
 - **server 接入**：
-  - `POST /api/device/push`：开发板可配置为此地址，支持 `application/x-www-form-urlencoded` 与 `application/json`，返回解析后的消息
-  - `POST /api/device/expand`：测试用，对给定 `template` 与 `context` 做参数引用展开
+  - `POST /api/lvyatech/push`：开发板可配置为此地址，支持 `application/x-www-form-urlencoded` 与 `application/json`，返回解析后的消息
+  - `POST /api/lvyatech/expand`：测试用，对给定 `template` 与 `context` 做参数引用展开
 
 协议与参数说明见 `docs/lvyatech`。

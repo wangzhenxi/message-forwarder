@@ -2,8 +2,7 @@ import Koa from 'koa';
 import bodyParser from 'koa-bodyparser';
 import cors from '@koa/cors';
 import { createUserRoutes } from './routes/user-routes';
-import { createExternalRoutes } from './routes/external-routes';
-import { createDeviceRoutes } from './routes/device-routes';
+import { createLvyatechRoutes } from './routes/lvyatech-routes';
 import { UserApplicationService } from '../../application/user/user-application-service';
 import { FileUserRepository } from '../persistence/file-user-repository';
 
@@ -15,14 +14,11 @@ export function createApp(): Koa {
   app.use(cors({ credentials: true }));
   app.use(bodyParser());
   const userRoutes = createUserRoutes(userApp);
-  const externalRoutes = createExternalRoutes();
-  const deviceRoutes = createDeviceRoutes();
+  const lvyatechRoutes = createLvyatechRoutes();
   app.use(userRoutes.routes());
   app.use(userRoutes.allowedMethods());
-  app.use(externalRoutes.routes());
-  app.use(externalRoutes.allowedMethods());
-  app.use(deviceRoutes.routes());
-  app.use(deviceRoutes.allowedMethods());
+  app.use(lvyatechRoutes.routes());
+  app.use(lvyatechRoutes.allowedMethods());
 
   return app;
 }
