@@ -52,17 +52,21 @@ pnpm --filter @message-forwarder/server start
 
 ## Docker
 
-单镜像：Nginx 托管前端并反代 `/api`，Node 仅提供 API，对外 80 端口。
+单镜像：Nginx 托管前端并反代 `/api`，Node 仅提供 API。对外 80 端口。
 
 - 默认使用国内镜像源（DaoCloud）拉取 `node:22-alpine`，避免直连 Docker Hub 失败。
 - 若本机可访问 Docker Hub 且希望用官方源，可传：`docker build --build-arg NODE_IMAGE=node:22-alpine -t message-forwarder .`
 
 ```bash
 docker build -t message-forwarder .
-docker run -d -p 80:80 \
+docker run -d -p 8080:80 \
   -v /path/to/data:/app/packages/server/data \
+  -e LVYATECH_DEVICE_URL=http://设备地址/ \
+  -e LVYATECH_DEVICE_TOKEN=你的Token \
   --name message-forwarder message-forwarder
 ```
+
+本地按 `.env` 传入环境变量时可使用 `--env-file .env`。
 
 推送到 `main` 或打 `v*` 标签后，[GitHub Actions](.github/workflows/docker-publish.yml) 会自动构建并发布到 [GitHub Container Registry](https://docs.github.com/zh/packages/working-with-a-github-packages-registry/working-with-the-container-registry)，拉取示例（将 `OWNER/REPO` 换成本仓库）：`docker pull ghcr.io/OWNER/REPO:latest`。
 
