@@ -1,6 +1,6 @@
 <template>
   <div class="login-page">
-    <a-card class="card" title="管理后台">
+    <a-card class="card" title="SIM卡管理后台">
       <template #extra>
         <a-typography-text type="secondary">请登录</a-typography-text>
       </template>

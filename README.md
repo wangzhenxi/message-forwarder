@@ -1,6 +1,6 @@
-# 简易管理后台
+# SIM卡管理后台
 
-基于 **pnpm + Koa + TypeScript + Vue 3**，按 **DDD（领域驱动设计）** 搭建的简易管理后台。
+基于 **pnpm + Koa + TypeScript + Vue 3**，按 **DDD（领域驱动设计）** 搭建的 SIM 卡管理后台。
 
 ## 技术栈
 

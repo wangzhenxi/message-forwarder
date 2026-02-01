@@ -1,7 +1,7 @@
 <template>
   <a-layout class="admin-layout">
     <a-layout-sider v-model:collapsed="collapsed" theme="dark" :width="220">
-      <div class="logo">管理后台</div>
+      <div class="logo">SIM卡管理后台</div>
       <a-menu
         v-model:selectedKeys="selectedKeys"
         theme="dark"
@@ -15,7 +15,8 @@
             {{ userInitial }}
           </div>
           <template #overlay>
-            <a-menu @click="(e: { key: string }) => e.key === 'logout' && handleLogout()">
+            <a-menu @click="handleMenuClick">
+              <a-menu-item key="nickname">修改昵称</a-menu-item>
               <a-menu-item key="logout" danger>退出</a-menu-item>
             </a-menu>
           </template>
@@ -31,12 +32,28 @@
         </router-view>
       </a-layout-content>
     </a-layout>
+
+    <a-modal
+      v-model:open="nicknameModalOpen"
+      title="修改昵称"
+      ok-text="保存"
+      cancel-text="取消"
+      :confirm-loading="nicknameSaving"
+      @ok="submitNickname"
+    >
+      <a-form layout="vertical" :model="nicknameForm">
+        <a-form-item label="昵称" name="nickname">
+          <a-input v-model:value="nicknameForm.nickname" placeholder="请输入昵称" maxlength="32" show-count />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </a-layout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, reactive, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { message } from 'ant-design-vue';
 import { useUserStore } from '@/stores/user';
 import type { MenuProps } from 'ant-design-vue';
 
@@ -45,6 +62,10 @@ const route = useRoute();
 const userStore = useUserStore();
 const collapsed = ref(false);
 const selectedKeys = ref<string[]>([route.path]);
+const nicknameModalOpen = ref(false);
+const nicknameSaving = ref(false);
+const nicknameForm = reactive({ nickname: '' });
+
 const userInitial = computed(() => {
   const name = userStore.user?.nickname ?? userStore.user?.username ?? '';
   if (!name) return '?';
@@ -67,12 +88,45 @@ watch(
   { immediate: true }
 );
 
+watch(nicknameModalOpen, (open) => {
+  if (open) {
+    nicknameForm.nickname = userStore.user?.nickname ?? userStore.user?.username ?? '';
+  }
+});
+
 function onMenuClick({ key }: { key: string }) {
   router.push(key);
 }
 
-function handleLogout() {
-  userStore.logout();
+function handleMenuClick(e: { key: string }) {
+  if (e.key === 'logout') {
+    handleLogout();
+  } else if (e.key === 'nickname') {
+    nicknameModalOpen.value = true;
+  }
+}
+
+async function submitNickname() {
+  const nickname = nicknameForm.nickname.trim();
+  if (!nickname) {
+    message.warning('请输入昵称');
+    return Promise.reject();
+  }
+  nicknameSaving.value = true;
+  try {
+    await userStore.updateNickname(nickname);
+    message.success('昵称已更新');
+    nicknameModalOpen.value = false;
+  } catch (err) {
+    message.error(err instanceof Error ? err.message : '修改失败');
+    return Promise.reject(err);
+  } finally {
+    nicknameSaving.value = false;
+  }
+}
+
+async function handleLogout() {
+  await userStore.logout();
   router.push('/login');
 }
 </script>

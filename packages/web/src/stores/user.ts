@@ -34,11 +34,44 @@ export const useUserStore = defineStore('user', () => {
     localStorage.setItem('token', t);
   }
 
-  function logout() {
-    token.value = '';
-    user.value = null;
-    localStorage.removeItem('token');
+  async function logout() {
+    try {
+      await api.post('/user/logout');
+    } catch {
+      // 无论成功失败都清空本地
+    } finally {
+      token.value = '';
+      user.value = null;
+      localStorage.removeItem('token');
+    }
   }
 
-  return { token, user, isLoggedIn, login, logout };
+  async function fetchUser() {
+    if (!token.value) return;
+    try {
+      const res = await api.get<{ code: number; data?: UserInfo }>('/user/me');
+      if (res.data.code === 0 && res.data.data) {
+        user.value = res.data.data;
+      } else {
+        token.value = '';
+        user.value = null;
+        localStorage.removeItem('token');
+      }
+    } catch {
+      token.value = '';
+      user.value = null;
+      localStorage.removeItem('token');
+    }
+  }
+
+  async function updateNickname(nickname: string) {
+    const res = await api.patch<{ code: number; data?: UserInfo }>('/user/profile', { nickname });
+    if (res.data.code === 0 && res.data.data) {
+      user.value = res.data.data;
+      return res.data.data;
+    }
+    throw new Error((res.data as { message?: string }).message ?? '修改失败');
+  }
+
+  return { token, user, isLoggedIn, login, logout, fetchUser, updateNickname };
 });

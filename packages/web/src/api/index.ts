@@ -15,9 +15,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    // 登录接口返回 401 时由登录页自行处理，不跳转，避免整页刷新清空表单
-    const isLoginRequest = err.config?.url === '/user/login';
-    if (err.response?.status === 401 && !isLoginRequest) {
+    // 登录/退出接口返回 401 时由调用方自行处理，不跳转
+    const url = err.config?.url ?? '';
+    const skipRedirect = url === '/user/login' || url === '/user/logout';
+    if (err.response?.status === 401 && !skipRedirect) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }

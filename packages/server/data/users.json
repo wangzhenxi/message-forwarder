@@ -3,7 +3,7 @@
     "id": "1",
     "username": "admin",
     "passwordHash": "admin123",
-    "nickname": "管理员",
+    "nickname": "josh",
     "role": "admin",
     "createdAt": "2024-01-01T00:00:00.000Z"
   }

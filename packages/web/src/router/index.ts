@@ -20,7 +20,7 @@ const router = createRouter({
   ],
 });
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const userStore = useUserStore();
   if (to.meta.public) {
     if (userStore.token) return next({ path: '/' });
@@ -28,6 +28,11 @@ router.beforeEach((to, _from, next) => {
   }
   if (to.meta.requiresAuth && !userStore.token) {
     return next({ path: '/login', query: { redirect: to.fullPath } });
+  }
+  // 有 token 但无 user（如刷新页面）时拉取当前用户，保证昵称等能正确显示
+  if (to.meta.requiresAuth && userStore.token && !userStore.user) {
+    await userStore.fetchUser();
+    if (!userStore.token) return next({ path: '/login', query: { redirect: to.fullPath } });
   }
   next();
 });

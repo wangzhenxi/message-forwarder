@@ -1,19 +1,20 @@
 import Router from 'koa-router';
+import type { Context, Next } from 'koa';
 import type { PushMessageStore } from '../../persistence/push-message-store';
-import { authMiddleware } from '../middleware/auth';
 import { PUSH_MESSAGE_CATEGORIES } from '@message-forwarder/lvyatech';
 import { readDataConfig } from '../../persistence/data-config';
 
 export interface LvyatechAdminRouteDeps {
   pushMessageStore: PushMessageStore;
+  authMiddleware: (ctx: Context, next: Next) => Promise<void>;
 }
 
 /**
- * 绿芽管理后台调用（需登录）
+ * SIM卡管理后台 - 绿芽相关接口（需登录）
  * - 推送消息查询、配置、控制指令下发
  */
 export function createLvyatechAdminRoutes(deps: LvyatechAdminRouteDeps): Router {
-  const { pushMessageStore } = deps;
+  const { pushMessageStore, authMiddleware } = deps;
   const router = new Router({ prefix: '/api/admin/lvyatech' });
 
   /** 仪表盘统计：近 N 天（默认 30）按日、按分类的消息数，及汇总 */
