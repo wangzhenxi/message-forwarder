@@ -54,6 +54,9 @@ pnpm --filter @message-forwarder/server start
 
 单镜像：Nginx 托管前端并反代 `/api`，Node 仅提供 API，对外 80 端口。
 
+- 默认使用国内镜像源（DaoCloud）拉取 `node:22-alpine`，避免直连 Docker Hub 失败。
+- 若本机可访问 Docker Hub 且希望用官方源，可传：`docker build --build-arg NODE_IMAGE=node:22-alpine -t message-forwarder .`
+
 ```bash
 docker build -t message-forwarder .
 docker run -d -p 80:80 \
