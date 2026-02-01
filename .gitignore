@@ -1,0 +1,44 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+build/
+*.tsbuildinfo
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 日志与临时
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE / 编辑器
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# 测试与覆盖率
+coverage/
+.nyc_output/
+
+# 系统与缓存
+.cache/
+.temp/
+tmp/
+*.local
+
+# pnpm
+.pnpm-store/
+
+# 可选：本地锁文件（若希望统一用 lockfile 可删除此行）
+# pnpm-lock.yaml
