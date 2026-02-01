@@ -22,6 +22,11 @@ export function createLvyatechDeviceRoutes(deps: LvyatechDeviceRouteDeps): Route
 
   router.post('/push', async (ctx) => {
     const body = ctx.request.body;
+    const contentType = ctx.request.headers['content-type'] ?? '';
+    const receivedAt = new Date().toISOString();
+    // 先存储原始请求体，便于后续 debug（含空体、解析失败等情况）
+    pushMessageStore.saveRawPayload(receivedAt, contentType, body ?? null);
+
     if (body === undefined || body === null) {
       ctx.status = 400;
       ctx.body = { code: 400, message: '请求体为空' };
@@ -29,7 +34,6 @@ export function createLvyatechDeviceRoutes(deps: LvyatechDeviceRouteDeps): Route
     }
     let msg: LvyatechMessage;
     try {
-      const contentType = ctx.request.headers['content-type'] ?? '';
       if (contentType.includes('application/json')) {
         msg = parseJsonBody(body);
       } else {

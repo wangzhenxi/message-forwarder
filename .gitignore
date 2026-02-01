@@ -40,7 +40,7 @@ tmp/
 # pnpm
 .pnpm-store/
 
-# 推送消息按日数据（保留 data/push-messages/settings.json 默认配置）
+# 推送消息按日数据（配置在 data/config.json push_retainDays）
 packages/server/data/push-messages/*/*.jsonl
 
 # 可选：本地锁文件（若希望统一用 lockfile 可删除此行）

@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { dirname } from 'path';
+import { dirname, join } from 'path';
 import type { IUserRepository } from '../../domain/user/repository';
 import type { UserEntity } from '../../domain/user/entity';
 import { createUser } from '../../domain/user/entity';
@@ -50,9 +50,27 @@ export class FileUserRepository implements IUserRepository {
   }
 
   private load(): void {
+    let content: string | null = null;
     if (existsSync(this.filePath)) {
       try {
-        const content = readFileSync(this.filePath, 'utf8');
+        content = readFileSync(this.filePath, 'utf8');
+      } catch (e) {
+        console.warn('读取用户数据文件失败，使用空数据:', (e as Error).message);
+      }
+    }
+    // 一次性迁移：新路径不存在时尝试从旧路径 data/user/users.json 读取并写入新路径
+    if (!content) {
+      const legacyPath = join(dirname(this.filePath), 'user', 'users.json');
+      if (existsSync(legacyPath)) {
+        try {
+          content = readFileSync(legacyPath, 'utf8');
+        } catch {
+          // ignore
+        }
+      }
+    }
+    if (content) {
+      try {
         const rows: UserRow[] = JSON.parse(content);
         if (Array.isArray(rows)) {
           this.store.clear();
@@ -60,13 +78,13 @@ export class FileUserRepository implements IUserRepository {
             const entity = rowToEntity(row);
             this.store.set(entity.id, entity);
           });
+          this.persist();
           return;
         }
       } catch (e) {
-        console.warn('读取用户数据文件失败，使用空数据:', (e as Error).message);
+        console.warn('解析用户数据失败，使用空数据:', (e as Error).message);
       }
     }
-    // 文件不存在或解析失败：保持空并写入空数组
     this.store.clear();
     this.persist();
   }

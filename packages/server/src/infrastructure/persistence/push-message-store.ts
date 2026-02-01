@@ -11,6 +11,7 @@ import { join } from 'path';
 import type { LvyatechMessage } from '@message-forwarder/lvyatech';
 import { typeToCategory, PUSH_MESSAGE_CATEGORIES } from '@message-forwarder/lvyatech';
 import { config } from '../../config';
+import { readDataConfig, writeDataConfig } from './data-config';
 
 /** 存储的一条消息（含接收时间与分类） */
 export interface StoredPushMessage extends LvyatechMessage {
@@ -28,7 +29,8 @@ export interface PushMessageQuery {
   limit?: number;
 }
 
-const SETTINGS_FILE = 'settings.json';
+/** 原始请求体调试存储目录 */
+const RAW_DEBUG_DIR = 'raw';
 
 function ensureDir(dir: string): void {
   if (!existsSync(dir)) {
@@ -52,7 +54,6 @@ function parseDateFromFileName(name: string): Date | null {
 }
 
 function isCategoryDir(baseDir: string, name: string): boolean {
-  if (name === SETTINGS_FILE) return false;
   const full = join(baseDir, name);
   try {
     return statSync(full).isDirectory() && (PUSH_MESSAGE_CATEGORIES as readonly string[]).includes(name);
@@ -63,12 +64,24 @@ function isCategoryDir(baseDir: string, name: string): boolean {
 
 export class PushMessageStore {
   private readonly dataDir: string;
-  private readonly settingsPath: string;
 
   constructor(dataDir: string = config.pushMessageDataDir) {
     this.dataDir = dataDir;
-    this.settingsPath = join(dataDir, SETTINGS_FILE);
     ensureDir(dataDir);
+  }
+
+  /** 存储设备 push 的原始请求体，便于后续 debug（每次请求都会写入，含解析失败的情况） */
+  saveRawPayload(receivedAt: string, contentType: string, body: unknown): void {
+    const rawDir = join(this.dataDir, RAW_DEBUG_DIR);
+    ensureDir(rawDir);
+    const file = join(rawDir, todayFileName());
+    const line =
+      JSON.stringify({
+        receivedAt,
+        contentType,
+        body: body === undefined ? null : body,
+      }) + '\n';
+    writeFileSync(file, line, { flag: 'a' });
   }
 
   /** 按分类追加一条消息到当日文件 */
@@ -85,30 +98,22 @@ export class PushMessageStore {
     writeFileSync(file, line, { flag: 'a' });
   }
 
-  /** 读取配置：保留天数 */
+  /** 读取配置：保留天数（来自 data/config.json push_retainDays） */
   getRetainDays(): number {
-    try {
-      if (existsSync(this.settingsPath)) {
-        const raw = readFileSync(this.settingsPath, 'utf8');
-        const o = JSON.parse(raw) as { retainDays?: number };
-        if (typeof o.retainDays === 'number' && o.retainDays > 0) {
-          return o.retainDays;
-        }
-      }
-    } catch {
-      // ignore
+    const c = readDataConfig();
+    if (typeof c.push_retainDays === 'number' && c.push_retainDays > 0) {
+      return c.push_retainDays;
     }
     return config.pushMessageRetainDaysDefault;
   }
 
   /** 设置保留天数 */
   setRetainDays(days: number): void {
-    ensureDir(this.dataDir);
     if (days < 1) days = 1;
-    writeFileSync(this.settingsPath, JSON.stringify({ retainDays: days }, null, 2), 'utf8');
+    writeDataConfig({ push_retainDays: days });
   }
 
-  /** 删除早于指定天数的按日数据文件（遍历各分类目录） */
+  /** 删除早于指定天数的按日数据文件（遍历各分类目录及 raw 调试目录） */
   deleteFilesOlderThan(days: number): number {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
@@ -116,8 +121,13 @@ export class PushMessageStore {
     if (!existsSync(this.dataDir)) return 0;
     const entries = readdirSync(this.dataDir);
     for (const name of entries) {
-      if (!isCategoryDir(this.dataDir, name)) continue;
+      if (!isCategoryDir(this.dataDir, name) && name !== RAW_DEBUG_DIR) continue;
       const categoryDir = join(this.dataDir, name);
+      try {
+        if (!statSync(categoryDir).isDirectory()) continue;
+      } catch {
+        continue;
+      }
       const files = readdirSync(categoryDir).filter((n) => n.endsWith('.jsonl'));
       for (const f of files) {
         const date = parseDateFromFileName(f);
