@@ -163,6 +163,7 @@ export function createLvyatechAdminRoutes(deps: LvyatechAdminRouteDeps): Router 
       } catch {
         // 非 JSON 则原样返回
       }
+      ctx.status = res.status;
       ctx.body = { code: 0, data, _status: res.status };
     } catch (e) {
       ctx.status = 502;

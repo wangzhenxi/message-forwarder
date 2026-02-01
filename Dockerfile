@@ -14,7 +14,7 @@ WORKDIR /app
 COPY --from=builder /app .
 # 挂载卷内无 config/users 时，start.sh 从此处复制（内容来自 server/data）
 COPY --from=builder /app/packages/server/data/config.json /app/packages/server/data/users.json /app/default-data/
-RUN mkdir -p /etc/nginx/http.d \
+RUN mkdir -p /etc/nginx/http.d /var/log/nginx \
   && cp -r /app/packages/web/dist/. /usr/share/nginx/html/ \
   && cp /app/docker/nginx/default.conf /etc/nginx/http.d/default.conf \
   && chmod +x /app/docker/start.sh \

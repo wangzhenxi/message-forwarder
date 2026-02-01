@@ -52,14 +52,14 @@ pnpm --filter @message-forwarder/server start
 
 ## Docker
 
-单镜像：Nginx 托管前端并反代 `/api`，Node 仅提供 API。对外 80 端口。
+单镜像：Nginx 托管前端并反代 `/api`，Node 仅提供 API。端口映射 `-p 8080:80`（本机 8080 访问）；网络默认 `bridge`，Linux 下需访问宿主机同网段设备时可使用 `--network host`。
 
 - 默认使用国内镜像源（DaoCloud）拉取 `node:22-alpine`，避免直连 Docker Hub 失败。
 - 若本机可访问 Docker Hub 且希望用官方源，可传：`docker build --build-arg NODE_IMAGE=node:22-alpine -t message-forwarder .`
 
 ```bash
 docker build -t message-forwarder .
-docker run -d -p 8080:80 \
+docker run -d -p 8080:80 --network bridge \
   -v /path/to/data:/app/packages/server/data \
   -e LVYATECH_DEVICE_URL=http://设备地址/ \
   -e LVYATECH_DEVICE_TOKEN=你的Token \
