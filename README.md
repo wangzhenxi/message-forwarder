@@ -12,24 +12,26 @@
 
 ```
 message-forwarder/
-├── server/                 # 后端 (Koa + TS, DDD)
-│   └── src/
-│       ├── domain/         # 领域层：实体、仓储接口
-│       │   └── user/
-│       ├── application/    # 应用层：DTO、应用服务
-│       │   └── user/
-│       ├── infrastructure/ # 基础设施层：仓储实现、HTTP、中间件
-│       │   ├── persistence/
-│       │   └── http/
-│       └── index.ts
-├── web/                    # 前端 (Vue 3 + Vite)
-│   └── src/
-│       ├── api/            # 请求封装
-│       ├── layouts/        # 布局
-│       ├── router/         # 路由与鉴权
-│       ├── stores/         # Pinia 状态
-│       └── views/          # 页面
-└── pnpm-workspace.yaml
+├── packages/
+│   ├── server/             # 后端 (Koa + TS, DDD)
+│   │   └── src/
+│   │       ├── domain/         # 领域层：实体、仓储接口
+│   │       │   └── user/
+│   │       ├── application/    # 应用层：DTO、应用服务
+│   │       │   └── user/
+│   │       ├── infrastructure/ # 基础设施层：仓储实现、HTTP、中间件
+│   │       │   ├── persistence/
+│   │       │   └── http/
+│   │       └── index.ts
+│   └── web/                # 前端 (Vue 3 + Vite)
+│       └── src/
+│           ├── api/            # 请求封装
+│           ├── layouts/        # 布局
+│           ├── router/         # 路由与鉴权
+│           ├── stores/         # Pinia 状态
+│           └── views/          # 页面
+├── pnpm-workspace.yaml
+└── package.json
 ```
 
 ## 快速开始
@@ -48,7 +50,7 @@ pnpm dev:web      # 前端 http://localhost:5173，代理 /api -> 3000
 
 ## 用户数据
 
-无默认用户。首次启动后用户数据文件为 `server/data/users.json`（空数组）。可手动编辑该文件添加用户，格式示例：
+无默认用户。首次启动后用户数据文件为 `packages/server/data/users.json`（空数组）。可手动编辑该文件添加用户，格式示例：
 
 ```json
 [

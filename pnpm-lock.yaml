@@ -15,7 +15,7 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
-  server:
+  packages/server:
     dependencies:
       '@koa/cors':
         specifier: ^5.0.0
@@ -52,7 +52,7 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
-  web:
+  packages/web:
     dependencies:
       axios:
         specifier: ^1.6.5

@@ -18,4 +18,4 @@
 | GET  | /api/example/list   | 示例：获取列表 |
 | POST | /api/example/submit | 示例：提交 |
 
-在 `server/src/infrastructure/http/routes/external-routes.ts` 中补充具体路径与 DTO，在 `external-api-client.ts` 中可增加带类型的封装方法。
+在 `packages/server/src/infrastructure/http/routes/external-routes.ts` 中补充具体路径与 DTO，在 `external-api-client.ts` 中可增加带类型的封装方法。
