@@ -17,12 +17,18 @@ export const useUserStore = defineStore('user', () => {
   const isLoggedIn = computed(() => !!token.value);
 
   async function login(username: string, password: string) {
-    const res = await api.post<{ code: number; data: { token: string; user: UserInfo } }>('/user/login', {
+    const res = await api.post<{
+      code: number;
+      message?: string;
+      data?: { token: string; user: UserInfo };
+    }>('/user/login', {
       username,
       password,
     });
-    if (res.data.code !== 0) throw new Error('登录失败');
-    const { token: t, user: u } = res.data.data;
+    if (res.data.code !== 0) {
+      throw new Error(res.data.message ?? '登录失败');
+    }
+    const { token: t, user: u } = res.data.data!;
     token.value = t;
     user.value = u;
     localStorage.setItem('token', t);

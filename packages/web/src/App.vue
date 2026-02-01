@@ -5,16 +5,9 @@
 <script setup lang="ts"></script>
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-html, body, #app {
+html,
+body,
+#app {
   height: 100%;
-}
-body {
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  background: #f0f2f5;
 }
 </style>

@@ -16,6 +16,46 @@ export function createLvyatechAdminRoutes(deps: LvyatechAdminRouteDeps): Router 
   const { pushMessageStore } = deps;
   const router = new Router({ prefix: '/api/admin/lvyatech' });
 
+  /** 仪表盘统计：近 N 天（默认 30）按日、按分类的消息数，及汇总 */
+  router.get('/dashboard-stats', authMiddleware, async (ctx) => {
+    const daysParam = ctx.query.days as string | undefined;
+    const days = Math.min(90, Math.max(1, parseInt(daysParam ?? '30', 10) || 30));
+    const toDate = new Date();
+    const fromDate = new Date(toDate);
+    fromDate.setDate(fromDate.getDate() - days + 1);
+    const formatDate = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const fromStr = formatDate(fromDate);
+    const toStr = formatDate(toDate);
+    const list = pushMessageStore.findBy({ from: fromStr, to: toStr, limit: 200000 });
+    const dailyMap: Record<string, Record<string, number>> = {};
+    const devIds = new Set<string>();
+    for (const m of list) {
+      const d = m.receivedAt.slice(0, 10);
+      if (!dailyMap[d]) dailyMap[d] = {};
+      dailyMap[d][m.category] = (dailyMap[d][m.category] ?? 0) + 1;
+      if (m.devId) devIds.add(m.devId);
+    }
+    const daily: Array<{ date: string; byCategory: Record<string, number>; total: number }> = [];
+    for (let d = new Date(fromDate.getTime()); d <= toDate; d.setDate(d.getDate() + 1)) {
+      const dateStr = formatDate(d);
+      const byCategory = dailyMap[dateStr] ?? {};
+      const total = Object.values(byCategory).reduce((a, b) => a + b, 0);
+      daily.push({ date: dateStr, byCategory, total });
+    }
+    ctx.body = {
+      code: 0,
+      data: {
+        days,
+        daily,
+        summary: {
+          totalMessages: list.length,
+          deviceCount: devIds.size,
+        },
+      },
+    };
+  });
+
   /** 推送消息分类列表（供前端筛选用） */
   router.get('/categories', authMiddleware, async (ctx) => {
     ctx.body = {

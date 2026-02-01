@@ -1,75 +1,100 @@
 <template>
   <div class="push-messages">
-    <h1 class="title">推送消息</h1>
-    <div class="filters">
-      <div class="filter-row">
-        <label>分类</label>
-        <select v-model="filters.category">
-          <option value="">全部</option>
-          <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.label }}</option>
-        </select>
-        <label>设备 ID</label>
-        <input v-model="filters.devId" type="text" placeholder="devId" />
-        <label>消息类型</label>
-        <input v-model.number="filters.type" type="number" placeholder="type" min="0" />
-      </div>
-      <div class="filter-row">
-        <label>日期起</label>
-        <input v-model="filters.from" type="date" />
-        <label>日期止</label>
-        <input v-model="filters.to" type="date" />
-        <label>条数</label>
-        <input v-model.number="filters.limit" type="number" min="1" max="500" />
-        <button type="button" class="btn primary" @click="fetchList">查询</button>
-      </div>
-    </div>
-    <div class="table-wrap">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>接收时间</th>
-            <th>分类</th>
-            <th>类型</th>
-            <th>设备 ID</th>
-            <th>其它参数</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(m, i) in list" :key="i">
-            <td>{{ formatDate(m.receivedAt) }}</td>
-            <td><span class="cat" :class="m.category">{{ categoryLabel(m.category) }}</span></td>
-            <td>{{ m.type }}</td>
-            <td><code>{{ m.devId }}</code></td>
-            <td class="extra">
-              <span v-for="(v, k) in extraKeys(m)" :key="k" class="kv">{{ k }}: {{ v }}</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <p v-if="loading" class="loading">加载中...</p>
-    <p v-else class="total">共 {{ list.length }} 条</p>
+    <a-typography-title :level="4">推送消息</a-typography-title>
+    <a-card style="margin-bottom: 20px">
+      <a-form layout="inline" :model="filters" class="filters">
+        <a-form-item label="分类">
+          <a-select v-model:value="filters.category" placeholder="全部" allow-clear style="width: 140px">
+            <a-select-option value="">全部</a-select-option>
+            <a-select-option v-for="c in categories" :key="c.id" :value="c.id">{{ c.label }}</a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item label="设备 ID">
+          <a-input v-model:value="filters.devId" placeholder="devId" allow-clear style="width: 140px" />
+        </a-form-item>
+        <a-form-item label="消息类型">
+          <a-input-number v-model:value="filters.type" placeholder="type" :min="0" style="width: 100px" />
+        </a-form-item>
+        <a-form-item label="日期起">
+          <a-date-picker v-model:value="filters.fromDate" value-format="YYYY-MM-DD" style="width: 140px" />
+        </a-form-item>
+        <a-form-item label="日期止">
+          <a-date-picker v-model:value="filters.toDate" value-format="YYYY-MM-DD" style="width: 140px" />
+        </a-form-item>
+        <a-form-item label="条数">
+          <a-input-number v-model:value="filters.limit" :min="1" :max="500" style="width: 100px" />
+        </a-form-item>
+        <a-form-item>
+          <a-button type="primary" @click="fetchList">查询</a-button>
+        </a-form-item>
+      </a-form>
+    </a-card>
+    <a-card>
+      <a-table
+        :columns="columns"
+        :data-source="list"
+        :loading="loading"
+        :pagination="false"
+        :scroll="{ x: 800 }"
+        row-key="receivedAt"
+        size="middle"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'receivedAt'">
+            {{ formatDate(record.receivedAt) }}
+          </template>
+          <template v-else-if="column.key === 'category'">
+            <a-tag :color="categoryTagColor(record.category)">{{ categoryLabel(record.category) }}</a-tag>
+          </template>
+          <template v-else-if="column.key === 'extra'">
+            <span v-for="(v, k) in extraKeys(record)" :key="k" class="kv">{{ k }}: {{ v }}</span>
+          </template>
+        </template>
+      </a-table>
+      <a-typography-text type="secondary" style="margin-top: 12px; display: block">
+        共 {{ list.length }} 条
+      </a-typography-text>
+    </a-card>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue';
 import { getCategories, getMessages, type CategoryItem, type StoredPushMessage } from '@/api/lvyatech';
+import type { TableColumnType } from 'ant-design-vue';
 
 const categories = ref<CategoryItem[]>([]);
 const list = ref<StoredPushMessage[]>([]);
 const loading = ref(false);
 const filters = reactive({
-  category: '',
+  category: '' as string,
   devId: '',
-  type: '' as '' | number,
-  from: '',
-  to: '',
+  type: undefined as number | undefined,
+  fromDate: null as string | null,
+  toDate: null as string | null,
   limit: 100,
 });
 
+const columns: TableColumnType[] = [
+  { title: '接收时间', dataIndex: 'receivedAt', key: 'receivedAt', width: 180 },
+  { title: '分类', dataIndex: 'category', key: 'category', width: 120 },
+  { title: '类型', dataIndex: 'type', key: 'type', width: 80 },
+  { title: '设备 ID', dataIndex: 'devId', key: 'devId', width: 120 },
+  { title: '其它参数', key: 'extra', ellipsis: true },
+];
+
 function categoryLabel(id: string) {
   return categories.value.find((c) => c.id === id)?.label ?? id;
+}
+
+function categoryTagColor(cat: string) {
+  const map: Record<string, string> = {
+    'device-status': 'blue',
+    call: 'green',
+    sms: 'orange',
+    other: 'default',
+  };
+  return map[cat] ?? 'default';
 }
 
 function extraKeys(m: StoredPushMessage): Record<string, string | number> {
@@ -96,9 +121,9 @@ async function fetchList() {
     const params: Record<string, string | number | undefined> = {
       category: filters.category || undefined,
       devId: filters.devId || undefined,
-      type: filters.type === '' ? undefined : filters.type,
-      from: filters.from || undefined,
-      to: filters.to || undefined,
+      type: filters.type,
+      from: filters.fromDate || undefined,
+      to: filters.toDate || undefined,
       limit: filters.limit,
     };
     const res = await getMessages(params);
@@ -118,116 +143,14 @@ onMounted(() => {
 .push-messages {
   max-width: 1200px;
 }
-.title {
-  font-size: 24px;
-  color: #1a1d24;
-  margin-bottom: 20px;
-}
 .filters {
-  background: #fff;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-}
-.filter-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-.filter-row:last-child {
   margin-bottom: 0;
-}
-.filters label {
-  font-size: 13px;
-  color: #6b7280;
-  min-width: 56px;
-}
-.filters input,
-.filters select {
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-}
-.filters input[type="text"],
-.filters input[type="number"] {
-  min-width: 100px;
-}
-.btn {
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  border: 1px solid #d1d5db;
-  background: #fff;
-}
-.btn.primary {
-  background: #3b82f6;
-  color: #fff;
-  border-color: #3b82f6;
-}
-.btn.primary:hover {
-  background: #2563eb;
-}
-.table-wrap {
-  background: #fff;
-  border-radius: 12px;
-  overflow: auto;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-}
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 700px;
-}
-.table th,
-.table td {
-  padding: 12px 16px;
-  text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-  font-size: 13px;
-}
-.table th {
-  background: #f9fafb;
-  font-weight: 600;
-  color: #374151;
-}
-.table tbody tr:hover {
-  background: #f9fafb;
-}
-.cat {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-}
-.cat.device-status { background: #dbeafe; color: #1d4ed8; }
-.cat.call { background: #dcfce7; color: #166534; }
-.cat.sms { background: #fef3c7; color: #92400e; }
-.cat.other { background: #f3f4f6; color: #4b5563; }
-.extra {
-  max-width: 280px;
 }
 .kv {
   display: inline-block;
   margin-right: 8px;
   margin-bottom: 4px;
   font-size: 12px;
-  color: #6b7280;
-}
-code {
-  font-size: 12px;
-  background: #f3f4f6;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-.loading,
-.total {
-  margin-top: 12px;
-  color: #6b7280;
-  font-size: 14px;
+  color: #666;
 }
 </style>

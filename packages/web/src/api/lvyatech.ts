@@ -22,6 +22,24 @@ export interface MessagesQuery {
   limit?: number;
 }
 
+/** 仪表盘统计：近 N 天按日、按分类 */
+export interface DashboardStats {
+  days: number;
+  daily: Array<{
+    date: string;
+    byCategory: Record<string, number>;
+    total: number;
+  }>;
+  summary: {
+    totalMessages: number;
+    deviceCount: number;
+  };
+}
+
+export function getDashboardStats(params?: { days?: number }) {
+  return api.get<{ code: number; data: DashboardStats }>('/admin/lvyatech/dashboard-stats', { params });
+}
+
 export function getCategories() {
   return api.get<{ code: number; data: CategoryItem[] }>('/admin/lvyatech/categories');
 }

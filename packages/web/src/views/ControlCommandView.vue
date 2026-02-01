@@ -1,81 +1,111 @@
 <template>
   <div class="control-command">
-    <h1 class="title">控制指令</h1>
-    <p class="intro">向开发板下发控制指令（代理到设备 /ctrl 接口）。设备地址与 token 由服务端配置文件 <code>data/config.json</code> 或环境变量传入。</p>
-    <div class="card">
-      <div class="field">
-        <label>指令 cmd <span class="required">*</span></label>
-        <select v-model="form.cmd" class="cmd-select">
-          <option value="">请选择</option>
-          <optgroup label="设备状态">
-            <option value="stat">stat - 获取开发板状态</option>
-            <option value="restart">restart - 重启开发板</option>
-          </optgroup>
-          <optgroup label="短信 / 通话">
-            <option value="sendsms">sendsms - 外发短信</option>
-            <option value="querysms">querysms - 查询本地短信库</option>
-            <option value="teldial">teldial - 电话拨号</option>
-            <option value="telanswer">telanswer - 接听来电</option>
-            <option value="telhangup">telhangup - 电话挂机</option>
-            <option value="teltts">teltts - 播放 TTS 语音</option>
-            <option value="stoptts">stoptts - 停止 TTS 播放</option>
-            <option value="telkeypress">telkeypress - 本地电话按键</option>
-            <option value="querytel">querytel - 查询本地通话记录</option>
-          </optgroup>
-          <optgroup label="WIFI">
-            <option value="wf">wf - 打开/关闭 WIFI</option>
-            <option value="addwf">addwf - 增加 WIFI 热点</option>
-            <option value="delwf">delwf - 删除 WIFI 热点</option>
-          </optgroup>
-          <optgroup label="设备 / 时间">
-            <option value="now">now - 设置开发板时间</option>
-            <option value="dailyrst">dailyrst - 设置每日重启时间</option>
-            <option value="pingsec">pingsec - 修改 PING 间隔</option>
-            <option value="chpwduser">chpwduser - 修改用户密码</option>
-          </optgroup>
-          <optgroup label="卡槽">
-            <option value="slotrst">slotrst - 指定卡槽重启</option>
-            <option value="slotoff">slotoff - 指定卡槽关机</option>
-            <option value="simcfu">simcfu - 设置无条件呼转</option>
-            <option value="asksimcfu">asksimcfu - 查询呼转设置</option>
-          </optgroup>
-          <optgroup label="OTA">
-            <option value="dailyota">dailyota - 设置每日 OTA 升级时间</option>
-            <option value="otanow">otanow - 立即执行 OTA 升级</option>
-          </optgroup>
-          <option value="other">其它（手动填写 cmd）</option>
-        </select>
-        <input v-if="form.cmd === 'other'" v-model="form.cmdOther" type="text" placeholder="cmd 值" class="cmd-other" />
-      </div>
-
-      <template v-if="currentParams.length > 0">
-        <div v-for="param in currentParams" :key="param.key" class="field">
-          <label>
-            {{ param.label }}
-            <span v-if="param.required" class="required">*</span>
-          </label>
-          <input
-            v-model="form.params[param.key]"
-            type="text"
-            :placeholder="param.placeholder"
-            :inputmode="param.type === 'number' ? 'numeric' : 'text'"
-            autocomplete="off"
+    <a-typography-title :level="4">控制指令</a-typography-title>
+    <a-typography-paragraph type="secondary">
+      向开发板下发控制指令（代理到设备 /ctrl 接口）。设备地址与 token 由服务端配置文件
+      <a-typography-text code>data/config.json</a-typography-text>
+      或环境变量传入。
+    </a-typography-paragraph>
+    <a-card>
+      <a-form layout="vertical" :style="{ maxWidth: 520 }">
+        <a-form-item label="指令 cmd" required>
+          <a-select
+            v-model:value="form.cmd"
+            placeholder="请选择"
+            size="large"
+            show-search
+            :filter-option="filterOption"
+            @change="form.params = {}"
+          >
+            <a-select-option value="">请选择</a-select-option>
+            <a-select-opt-group label="设备状态">
+              <a-select-option value="stat">stat - 获取开发板状态</a-select-option>
+              <a-select-option value="restart">restart - 重启开发板</a-select-option>
+            </a-select-opt-group>
+            <a-select-opt-group label="短信 / 通话">
+              <a-select-option value="sendsms">sendsms - 外发短信</a-select-option>
+              <a-select-option value="querysms">querysms - 查询本地短信库</a-select-option>
+              <a-select-option value="teldial">teldial - 电话拨号</a-select-option>
+              <a-select-option value="telanswer">telanswer - 接听来电</a-select-option>
+              <a-select-option value="telhangup">telhangup - 电话挂机</a-select-option>
+              <a-select-option value="teltts">teltts - 播放 TTS 语音</a-select-option>
+              <a-select-option value="stoptts">stoptts - 停止 TTS 播放</a-select-option>
+              <a-select-option value="telkeypress">telkeypress - 本地电话按键</a-select-option>
+              <a-select-option value="querytel">querytel - 查询本地通话记录</a-select-option>
+            </a-select-opt-group>
+            <a-select-opt-group label="WIFI">
+              <a-select-option value="wf">wf - 打开/关闭 WIFI</a-select-option>
+              <a-select-option value="addwf">addwf - 增加 WIFI 热点</a-select-option>
+              <a-select-option value="delwf">delwf - 删除 WIFI 热点</a-select-option>
+            </a-select-opt-group>
+            <a-select-opt-group label="设备 / 时间">
+              <a-select-option value="now">now - 设置开发板时间</a-select-option>
+              <a-select-option value="dailyrst">dailyrst - 设置每日重启时间</a-select-option>
+              <a-select-option value="pingsec">pingsec - 修改 PING 间隔</a-select-option>
+              <a-select-option value="chpwduser">chpwduser - 修改用户密码</a-select-option>
+            </a-select-opt-group>
+            <a-select-opt-group label="卡槽">
+              <a-select-option value="slotrst">slotrst - 指定卡槽重启</a-select-option>
+              <a-select-option value="slotoff">slotoff - 指定卡槽关机</a-select-option>
+              <a-select-option value="simcfu">simcfu - 设置无条件呼转</a-select-option>
+              <a-select-option value="asksimcfu">asksimcfu - 查询呼转设置</a-select-option>
+            </a-select-opt-group>
+            <a-select-opt-group label="OTA">
+              <a-select-option value="dailyota">dailyota - 设置每日 OTA 升级时间</a-select-option>
+              <a-select-option value="otanow">otanow - 立即执行 OTA 升级</a-select-option>
+            </a-select-opt-group>
+            <a-select-option value="other">其它（手动填写 cmd）</a-select-option>
+          </a-select>
+          <a-input
+            v-if="form.cmd === 'other'"
+            v-model:value="form.cmdOther"
+            placeholder="cmd 值"
+            style="margin-top: 8px"
           />
-          <span v-if="param.hint" class="hint">{{ param.hint }}</span>
-        </div>
-      </template>
+        </a-form-item>
 
-      <div v-if="form.cmd === 'other'" class="field">
-        <label>附加参数（可选）</label>
-        <textarea v-model="form.extraParams" placeholder="每行一个：参数名=值&#10;例：p1=1&#10;p2=10086" rows="3"></textarea>
-      </div>
+        <template v-if="currentParams.length > 0">
+          <a-form-item
+            v-for="param in currentParams"
+            :key="param.key"
+            :label="param.label"
+            :required="param.required"
+          >
+            <a-input
+              v-model:value="form.params[param.key]"
+              :placeholder="param.placeholder"
+              allow-clear
+            />
+            <a-typography-text v-if="param.hint" type="secondary" style="font-size: 12px; display: block; margin-top: 4px">
+              {{ param.hint }}
+            </a-typography-text>
+          </a-form-item>
+        </template>
 
-      <button type="button" class="btn primary" :disabled="sending" @click="send">发送指令</button>
-      <div v-if="result !== null" class="result" :class="resultOk ? 'ok' : 'err'">
-        <div class="result-head">响应</div>
-        <pre>{{ resultText }}</pre>
-      </div>
-    </div>
+        <a-form-item v-if="form.cmd === 'other'" label="附加参数（可选）">
+          <a-textarea
+            v-model:value="form.extraParams"
+            placeholder="每行一个：参数名=值&#10;例：p1=1&#10;p2=10086"
+            :rows="3"
+          />
+        </a-form-item>
+
+        <a-form-item>
+          <a-button type="primary" :loading="sending" @click="send">发送指令</a-button>
+        </a-form-item>
+
+        <a-alert
+          v-if="result !== null"
+          :message="resultOk ? '响应' : '错误'"
+          :type="resultOk ? 'success' : 'error'"
+          show-icon
+        >
+          <template #description>
+            <pre class="result-pre">{{ resultText }}</pre>
+          </template>
+        </a-alert>
+      </a-form>
+    </a-card>
   </div>
 </template>
 
@@ -83,7 +113,6 @@
 import { ref, reactive, computed } from 'vue';
 import { sendControl, type ControlPayload } from '@/api/lvyatech';
 
-/** 单条参数定义 */
 interface ParamDef {
   key: string;
   label: string;
@@ -93,7 +122,6 @@ interface ParamDef {
   hint?: string;
 }
 
-/** 按指令罗列参数（平铺），与文档一致 */
 const CMD_PARAMS: Record<string, ParamDef[]> = {
   sendsms: [
     { key: 'p1', label: '卡槽号', placeholder: '1 或 2', type: 'number', required: true },
@@ -155,46 +183,28 @@ const CMD_PARAMS: Record<string, ParamDef[]> = {
     { key: 'p2', label: '停止后动作', placeholder: '0 无操作，1 挂断', type: 'number' },
     { key: 'tid', label: 'tid（可选）', placeholder: '' },
   ],
-  wf: [
-    { key: 'p1', label: 'WIFI 状态', placeholder: 'on 或 off', required: true, hint: 'on 开启，off 关闭' },
-  ],
+  wf: [{ key: 'p1', label: 'WIFI 状态', placeholder: 'on 或 off', required: true, hint: 'on 开启，off 关闭' }],
   addwf: [
     { key: 'p1', label: 'WIFI 热点名', placeholder: 'SSID', required: true },
     { key: 'p2', label: 'WIFI 密码', placeholder: '热点密码', required: true },
   ],
-  delwf: [
-    { key: 'p1', label: 'WIFI 热点名', placeholder: '要删除的 SSID', required: true },
-  ],
+  delwf: [{ key: 'p1', label: 'WIFI 热点名', placeholder: '要删除的 SSID', required: true }],
   now: [
     { key: 'p1', label: '当前时间', placeholder: 'YYYYMMDDhhmmss，省略则自动获取' },
     { key: 'p2', label: '自动校时', placeholder: '0 不允许，15 允许（默认）', type: 'number' },
     { key: 'p3', label: '时区', placeholder: '8 中国（默认）', type: 'number' },
   ],
-  dailyrst: [
-    { key: 'p1', label: '每日重启小时', placeholder: '0~23；大于 23 表示关闭', type: 'number', required: true },
-  ],
-  pingsec: [
-    { key: 'p1', label: 'PING 间隔（秒）', placeholder: '最小值 10', type: 'number', required: true },
-  ],
-  chpwduser: [
-    { key: 'p1', label: '新用户密码', placeholder: '不少于 4 位', required: true },
-  ],
-  slotrst: [
-    { key: 'p1', label: '卡槽号', placeholder: '1 或 2', type: 'number', required: true },
-  ],
-  slotoff: [
-    { key: 'p1', label: '卡槽号', placeholder: '1 或 2', type: 'number', required: true },
-  ],
+  dailyrst: [{ key: 'p1', label: '每日重启小时', placeholder: '0~23；大于 23 表示关闭', type: 'number', required: true }],
+  pingsec: [{ key: 'p1', label: 'PING 间隔（秒）', placeholder: '最小值 10', type: 'number', required: true }],
+  chpwduser: [{ key: 'p1', label: '新用户密码', placeholder: '不少于 4 位', required: true }],
+  slotrst: [{ key: 'p1', label: '卡槽号', placeholder: '1 或 2', type: 'number', required: true }],
+  slotoff: [{ key: 'p1', label: '卡槽号', placeholder: '1 或 2', type: 'number', required: true }],
   simcfu: [
     { key: 'p1', label: '卡槽号', placeholder: '1 或 2', type: 'number', required: true },
     { key: 'p2', label: '呼转目标号码', placeholder: '留空表示取消呼转' },
   ],
-  asksimcfu: [
-    { key: 'p1', label: '卡槽号', placeholder: '1 或 2', type: 'number', required: true },
-  ],
-  dailyota: [
-    { key: 'p1', label: '每日 OTA 小时', placeholder: '0~23；大于 23 表示关闭', type: 'number', required: true },
-  ],
+  asksimcfu: [{ key: 'p1', label: '卡槽号', placeholder: '1 或 2', type: 'number', required: true }],
+  dailyota: [{ key: 'p1', label: '每日 OTA 小时', placeholder: '0~23；大于 23 表示关闭', type: 'number', required: true }],
 };
 
 const form = reactive<{
@@ -225,6 +235,11 @@ const resultText = computed(() => {
     ? JSON.stringify(result.value.data, null, 2)
     : String(result.value.data);
 });
+
+function filterOption(input: string, option: { value?: string; label?: string }) {
+  const label = option?.label ?? option?.value ?? '';
+  return String(label).toLowerCase().includes(input.toLowerCase());
+}
 
 function parseExtraParams(): Record<string, string> {
   const out: Record<string, string> = {};
@@ -287,106 +302,7 @@ async function send() {
 .control-command {
   max-width: 640px;
 }
-.title {
-  font-size: 24px;
-  color: #1a1d24;
-  margin-bottom: 8px;
-}
-.intro {
-  color: #6b7280;
-  font-size: 14px;
-  margin-bottom: 20px;
-}
-.intro code {
-  font-size: 13px;
-  background: #f3f4f6;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-.card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-}
-.field {
-  margin-bottom: 20px;
-}
-.field label {
-  display: block;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 8px;
-  font-size: 14px;
-}
-.required {
-  color: #dc2626;
-}
-.hint {
-  display: block;
-  font-size: 12px;
-  color: #6b7280;
-  margin-top: 4px;
-}
-.field input,
-.field select,
-.field textarea {
-  width: 100%;
-  max-width: 400px;
-  padding: 10px 14px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-  font-family: inherit;
-}
-.field textarea {
-  max-width: 100%;
-  resize: vertical;
-}
-.cmd-select {
-  max-width: 100%;
-}
-.field .cmd-other {
-  margin-top: 8px;
-}
-.btn {
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  border: 1px solid #d1d5db;
-  background: #fff;
-}
-.btn.primary {
-  background: #3b82f6;
-  color: #fff;
-  border-color: #3b82f6;
-}
-.btn.primary:hover:not(:disabled) {
-  background: #2563eb;
-}
-.btn.primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-.result {
-  margin-top: 24px;
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-}
-.result-head {
-  font-weight: 600;
-  margin-bottom: 8px;
-  font-size: 14px;
-}
-.result.ok .result-head {
-  color: #059669;
-}
-.result.err .result-head {
-  color: #dc2626;
-}
-.result pre {
+.result-pre {
   margin: 0;
   font-size: 12px;
   overflow: auto;
