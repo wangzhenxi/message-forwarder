@@ -35,31 +35,54 @@
         :data-source="list"
         :loading="loading"
         :pagination="false"
-        :scroll="{ x: 800 }"
-        row-key="receivedAt"
+        :scroll="{ x: 900 }"
+        :row-key="rowKey"
         size="middle"
+        class="message-table"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'receivedAt'">
-            {{ formatDate(record.receivedAt) }}
+            <span class="cell-primary">{{ formatDate(record.receivedAt) }}</span>
           </template>
           <template v-else-if="column.key === 'category'">
-            <a-tag :color="categoryTagColor(record.category)">{{ categoryLabel(record.category) }}</a-tag>
+            <a-tag :color="categoryTagColor(record.category)" class="cell-secondary">{{ categoryLabel(record.category) }}</a-tag>
           </template>
-          <template v-else-if="column.key === 'extra'">
-            <span v-for="(v, k) in extraKeys(record)" :key="k" class="kv">{{ k }}: {{ v }}</span>
+          <template v-else-if="column.key === 'type'">
+            <span class="cell-primary type-cell">{{ typeDisplay(record.type) }}</span>
+          </template>
+          <template v-else-if="column.key === 'messageSource'">
+            <span class="cell-primary cell-ellipsis source-cell">{{ messageSource(record) }}</span>
+          </template>
+          <template v-else-if="column.key === 'messageContent'">
+            <a-tooltip :title="messageContent(record)">
+              <div class="cell-primary cell-ellipsis content-cell">{{ messageContent(record) }}</div>
+            </a-tooltip>
+          </template>
+          <template v-else-if="column.key === 'action'">
+            <a-button type="link" size="small" @click="showDetail(record)">详情</a-button>
           </template>
         </template>
       </a-table>
       <a-typography-text type="secondary" style="margin-top: 12px; display: block">
-        共 {{ list.length }} 条
+        共 {{ list.length }} 条。表格仅展示主要信息，需查看完整参数或原始数据请点击「详情」。
       </a-typography-text>
     </a-card>
+    <a-modal
+      v-model:open="detailVisible"
+      title="消息详情"
+      width="560px"
+      :footer="null"
+      wrap-class-name="message-detail-modal"
+    >
+      <div v-if="detailRecord" class="detail-content">
+        <pre class="detail-json">{{ detailJson }}</pre>
+      </div>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { getCategories, getMessages, type CategoryItem, type StoredPushMessage } from '@/api/lvyatech';
 import type { TableColumnType } from 'ant-design-vue';
 
@@ -75,13 +98,83 @@ const filters = reactive({
   limit: 100,
 });
 
+// 列顺序：接收时间、分类、类型、消息来源、消息内容、操作（设备 ID 已隐藏）
 const columns: TableColumnType[] = [
-  { title: '接收时间', dataIndex: 'receivedAt', key: 'receivedAt', width: 180 },
-  { title: '分类', dataIndex: 'category', key: 'category', width: 120 },
-  { title: '类型', dataIndex: 'type', key: 'type', width: 80 },
-  { title: '设备 ID', dataIndex: 'devId', key: 'devId', width: 120 },
-  { title: '其它参数', key: 'extra', ellipsis: true },
+  { title: '接收时间', dataIndex: 'receivedAt', key: 'receivedAt', width: 168 },
+  { title: '分类', dataIndex: 'category', key: 'category', width: 100 },
+  { title: '类型', dataIndex: 'type', key: 'type', width: 140 },
+  { title: '消息来源', key: 'messageSource', width: 140, ellipsis: true },
+  { title: '消息内容', key: 'messageContent', width: 260, ellipsis: true },
+  { title: '操作', key: 'action', width: 72, fixed: 'right' },
 ];
+
+const detailVisible = ref(false);
+const detailRecord = ref<StoredPushMessage | null>(null);
+const detailJson = computed(() =>
+  detailRecord.value ? JSON.stringify(detailRecord.value, null, 2) : ''
+);
+
+function rowKey(record: StoredPushMessage, index: number) {
+  return `${record.receivedAt}-${record.devId}-${record.type}-${index}`;
+}
+
+/** 类型中文说明，未在映射中的返回 null */
+function typeDescription(type: number): string | null {
+  const map: Record<number, string> = {
+    100: 'WIFI已联网',
+    101: 'SIM1已联网',
+    102: 'SIM2已联网',
+    202: 'SIM卡准备初始化',
+    203: 'SIM卡IMSI上报',
+    204: 'SIM卡已就绪',
+    205: 'SIM卡已被取出',
+    209: 'SIM卡错误',
+    301: '通信模组异常',
+    501: '新短信',
+    502: '外发短信成功',
+    601: '来电振铃',
+    602: '来电接通',
+    603: '来电挂断',
+    620: '去电拨号',
+    621: '去电振铃',
+    622: '去电接通',
+    623: '去电挂断',
+    998: 'PING',
+    999: '设备状态',
+  };
+  return map[type] ?? null;
+}
+
+/** 类型列展示：仅展示中文说明，未映射的显示 - */
+function typeDisplay(type: number): string {
+  const desc = typeDescription(type);
+  return desc ?? '—';
+}
+
+/** 消息来源：短信/通话为号码，其它为空 */
+function messageSource(m: StoredPushMessage): string {
+  const type = m.type;
+  const phNum = m.phNum != null ? String(m.phNum) : '';
+  if (type === 501 && phNum) return phNum;
+  if (type === 502 && phNum) return phNum;
+  if ([601, 602, 603, 620, 621, 622, 623].includes(type) && phNum) return phNum;
+  return '—';
+}
+
+/** 消息内容：501 新短信为短信正文，502 外发成功为短信正文或 tid，其它为 - */
+function messageContent(m: StoredPushMessage): string {
+  if (m.type === 501 && m.smsBd != null) return String(m.smsBd);
+  if (m.type === 502) {
+    if (m.smsBd != null && String(m.smsBd).trim() !== '') return String(m.smsBd);
+    if (m.tid != null && String(m.tid).trim() !== '') return String(m.tid);
+  }
+  return '—';
+}
+
+function showDetail(record: StoredPushMessage) {
+  detailRecord.value = record;
+  detailVisible.value = true;
+}
 
 function categoryLabel(id: string) {
   return categories.value.find((c) => c.id === id)?.label ?? id;
@@ -95,15 +188,6 @@ function categoryTagColor(cat: string) {
     other: 'default',
   };
   return map[cat] ?? 'default';
-}
-
-function extraKeys(m: StoredPushMessage): Record<string, string | number> {
-  const skip = new Set(['devId', 'type', 'receivedAt', 'category']);
-  const out: Record<string, string | number> = {};
-  for (const [k, v] of Object.entries(m)) {
-    if (!skip.has(k) && v !== undefined && v !== '') out[k] = v;
-  }
-  return out;
 }
 
 function formatDate(iso: string) {
@@ -146,11 +230,41 @@ onMounted(() => {
 .filters {
   margin-bottom: 0;
 }
-.kv {
-  display: inline-block;
-  margin-right: 8px;
-  margin-bottom: 4px;
+.message-table :deep(.cell-primary) {
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.88);
+}
+.message-table :deep(.cell-secondary) {
+  color: rgba(0, 0, 0, 0.55);
+  font-size: 13px;
+}
+.cell-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.type-cell {
+  white-space: nowrap;
+}
+.source-cell {
+  max-width: 140px;
+}
+.content-cell {
+  max-width: 260px;
+}
+.detail-content {
+  text-align: left;
+}
+.detail-json {
+  margin: 0;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 6px;
   font-size: 12px;
-  color: #666;
+  max-height: 40vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 </style>
