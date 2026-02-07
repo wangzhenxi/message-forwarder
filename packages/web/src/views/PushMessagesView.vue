@@ -151,13 +151,14 @@ function typeDisplay(type: number): string {
   return desc ?? '—';
 }
 
-/** 消息来源：短信/通话为号码，其它为空 */
+/** 消息来源：统一为「来自/发往/号码」+ 号码 格式 */
 function messageSource(m: StoredPushMessage): string {
   const type = m.type;
   const phNum = m.phNum != null ? String(m.phNum) : '';
-  if (type === 501 && phNum) return phNum;
-  if (type === 502 && phNum) return phNum;
-  if ([601, 602, 603, 620, 621, 622, 623].includes(type) && phNum) return phNum;
+  if (!phNum) return '—';
+  if (type === 501) return `来自 ${phNum}`;
+  if (type === 502) return `发往 ${phNum}`;
+  if ([601, 602, 603, 620, 621, 622, 623].includes(type)) return `号码 ${phNum}`;
   return '—';
 }
 
